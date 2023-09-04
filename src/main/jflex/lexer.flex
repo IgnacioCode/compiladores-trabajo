@@ -55,8 +55,9 @@ ABRE_LLAVE = "{"
 CIERRA_LLAVE = "}"
 COND_IF = "if"
 COND_ELSE = "else"
+CICLO = "while"
 TD_INT = "int"
-TD_FLOW = "flow"
+TD_FLOAT = "float"
 TD_STRING = "string"
 INIC_VARS = "vars"
 COMA = ","
@@ -66,7 +67,6 @@ ABRE_COM = "#/"
 CIERRA_COM = "\#"
 LEER_TECLADO = "read"
 MOSTRAR_PANTALLA = "write"
-CICLO = "while"
 FUNC_INDICE = "FirstIndexOf"
 FUNC_CONCAT = "ConcatenarConRecorte"
 
@@ -90,13 +90,47 @@ IntegerConstant = {Digito}+
   {IntegerConstant}                        { return symbol(ParserSym.INTEGER_CONSTANT, yytext()); }
 
   /* operators */
-  {OP_MAS}                                    { return symbol(ParserSym.PLUS, "OP_MAS"); }
-  {OP_MENOS}                                     { return symbol(ParserSym.SUB, "OP_MENOS"); }
-  {OP_MULT}                                    { return symbol(ParserSym.MULT, "OP_MULT"); }
-  {OP_DIV}                                     { return symbol(ParserSym.DIV, "OP_DIV"); }
-  {OP_ASIG}                                   { return symbol(ParserSym.ASSIG, "OP_ASIG"); }
-  {ABRE_PAR}                             { return symbol(ParserSym.OPEN_BRACKET, "ABRE_PAR"); }
-  {CIERRA_PAR}                            { return symbol(ParserSym.CLOSE_BRACKET, "CIERRA_PAR"); }
+
+  {OP_MAS}                                 { return symbol(ParserSym.PLUS, "OP_MAS"); }
+  {OP_MENOS}                               { return symbol(ParserSym.SUB, "OP_MENOS"); }
+  {OP_MULT}                                { return symbol(ParserSym.MULT, "OP_MULT"); }
+  {OP_DIV}                                 { return symbol(ParserSym.DIV, "OP_DIV"); }
+  {OP_ASIG}                                { return symbol(ParserSym.ASSIG, "OP_ASIG"); }
+  {OP_AND}                                 { return symbol(ParserSym.OP_AND, "OP_AND"); }
+  {OP_OR}                                  { return symbol(ParserSym.OP_OR, "OP_OR"); }
+  {OP_NOT}                                 { return symbol(ParserSym.OP_NOT, "OP_NOT"); }
+
+  {COMP_EQ}                                { return symbol(ParserSym.COMP_EQ, "COMP_EQ"); }
+  {COMP_DIST}                              { return symbol(ParserSym.COMP_DIST, "COMP_DIST"); }
+  {COMP_MAYOR}                             { return symbol(ParserSym.COMP_MAYOR, "COMP_MAYOR"); }
+  {COMP_MENOR}                             { return symbol(ParserSym.COMP_MENOR, "COMP_MENOR"); }
+  {COMP_MAYOR_EQ}                          { return symbol(ParserSym.COMP_MAYOR_EQ, "COMP_MAYOR_EQ"); }
+  {COMP_MENOR_EQ}                          { return symbol(ParserSym.COMP_MENOR_EQ, "COMP_MENOR_EQ"); }
+
+  {ABRE_PAR}                               { return symbol(ParserSym.ABRE_PAR, "ABRE_PAR"); }
+  {CIERRA_PAR}                             { return symbol(ParserSym.CIERRA_PAR, "CIERRA_PAR"); }
+  {ABRE_LLAVE}                             { return symbol(ParserSym.ABRE_LLAVE, "ABRE_LLAVE"); }
+  {CIERRA_LLAVE}                           { return symbol(ParserSym.CIERRA_LLAVE, "CIERRA_LLAVE"); }
+
+  {COND_IF}                                { return symbol(ParserSym.COND_IF, "COND_IF"); }
+  {COND_ELSE}                              { return symbol(ParserSym.COND_ELSE, "COND_ELSE"); }
+  {CICLO}                                  { return symbol(ParserSym.CICLO, "CICLO"); }
+
+  {TD_INT}                                 { return symbol(ParserSym.TD_INT, "TD_INT"); }
+  {TD_FLOAT}                               { return symbol(ParserSym.TD_FLOAT, "TD_FLOAT"); }
+  {TD_STRING}                              { return symbol(ParserSym.TD_STRING, "TD_STRING"); }
+
+  {INIC_VARS}                              { return symbol(ParserSym.INIC_VARS, "INIC_VARS"); }
+  {COMA}                                   { return symbol(ParserSym.COMA, "COMA"); }
+  {DOS_PUNTOS}                             { return symbol(ParserSym.DOS_PUNTOS, "DOS_PUNTOS"); }
+  {PUNTO_COMA}                             { return symbol(ParserSym.PUNTO_COMA, "PUNTO_COMA"); }
+  {ABRE_COM}                               { return symbol(ParserSym.ABRE_COM, "ABRE_COM"); }
+  {CIERRA_COM}                             { return symbol(ParserSym.CIERRA_COM, "CIERRA_COM"); }
+  {LEER_TECLADO}                           { return symbol(ParserSym.LEER_TECLADO, "LEER_TECLADO"); }
+  {MOSTRAR_PANTALLA}                       { return symbol(ParserSym.MOSTRAR_PANTALLA, "MOSTRAR_PANTALLA"); }
+  
+  {FUNC_INDICE}                            { return symbol(ParserSym.FUNC_INDICE, "FUNC_INDICE"); }
+  {FUNC_CONCAT}                            { return symbol(ParserSym.FUNC_CONCAT, "FUNC_CONCAT"); }
 
   /* whitespace */
   {WhiteSpace}                   { /* ignore */ }
