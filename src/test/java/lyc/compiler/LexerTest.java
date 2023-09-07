@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 
 import static com.google.common.truth.Truth.assertThat;
-import static lyc.compiler.constants.Constants.MAX_LENGTH;
+import static lyc.compiler.constants.Constants.STRING_MAX_LENGTH;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 
@@ -66,17 +66,17 @@ public class LexerTest {
   @Test
   public void assignmentWithExpressions() throws Exception {
     scan("c=d*(e-21)/4");
-    assertThat(nextToken()).isEqualTo(ParserSym.IDENTIFIER);
-    assertThat(nextToken()).isEqualTo(ParserSym.ASSIG);
-    assertThat(nextToken()).isEqualTo(ParserSym.IDENTIFIER);
-    assertThat(nextToken()).isEqualTo(ParserSym.MULT);
-    assertThat(nextToken()).isEqualTo(ParserSym.OPEN_BRACKET);
-    assertThat(nextToken()).isEqualTo(ParserSym.IDENTIFIER);
-    assertThat(nextToken()).isEqualTo(ParserSym.SUB);
-    assertThat(nextToken()).isEqualTo(ParserSym.INTEGER_CONSTANT);
-    assertThat(nextToken()).isEqualTo(ParserSym.CLOSE_BRACKET);
-    assertThat(nextToken()).isEqualTo(ParserSym.DIV);
-    assertThat(nextToken()).isEqualTo(ParserSym.INTEGER_CONSTANT);
+    assertThat(nextToken()).isEqualTo(ParserSym.ID);
+    assertThat(nextToken()).isEqualTo(ParserSym.OP_ASIG);
+    assertThat(nextToken()).isEqualTo(ParserSym.ID);
+    assertThat(nextToken()).isEqualTo(ParserSym.OP_MULT);
+    assertThat(nextToken()).isEqualTo(ParserSym.ABRE_LLAVE);
+    assertThat(nextToken()).isEqualTo(ParserSym.ID);
+    assertThat(nextToken()).isEqualTo(ParserSym.OP_MENOS);
+    assertThat(nextToken()).isEqualTo(ParserSym.CTE);
+    assertThat(nextToken()).isEqualTo(ParserSym.CIERRA_LLAVE);
+    assertThat(nextToken()).isEqualTo(ParserSym.OP_DIV);
+    assertThat(nextToken()).isEqualTo(ParserSym.CTE);
     assertThat(nextToken()).isEqualTo(ParserSym.EOF);
   }
 
@@ -105,7 +105,7 @@ public class LexerTest {
     return new RandomStringGenerator.Builder()
             .filteredBy(CharacterPredicates.LETTERS)
             .withinRange('a', 'z')
-            .build().generate(MAX_LENGTH * 2);
+            .build().generate(STRING_MAX_LENGTH * 2);
   }
 
 }

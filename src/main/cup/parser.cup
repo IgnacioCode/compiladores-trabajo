@@ -4,36 +4,159 @@ import java_cup.runtime.*;
 
 class Parser;
 
+parser code {:
+    public boolean syntaxErrors;
 
-// Terminals
-terminal ASSIG;
-terminal PLUS;
-terminal SUB;
-terminal MULT;
-terminal DIV;
-terminal OPEN_BRACKET;
-terminal CLOSE_BRACKET;
-terminal INTEGER_CONSTANT;
-terminal IDENTIFIER;
+    public void syntax_error(Symbol current_token) {
+        report_error(
+            "Syntax error at line " + (current_token.left + 1) + 
+            ", column " + current_token.right + "\n", null
+        );
+    }
 
-// Non Terminals
-non terminal sentence;
-non terminal assignment;
-non terminal expression;
-non terminal term;
+    private void print(String str) {
+        System.out.println("Regla: " + str);
+    }
+:};
+
+// terminales
+terminal CTE;
+terminal ID;
+terminal STRING_LITERAL;
+
+terminal OP_ASIG;
+terminal OP_MAS;
+terminal OP_MENOS;
+terminal OP_MULT;
+terminal OP_DIV;
+terminal OP_AND;
+terminal OP_OR;
+terminal OP_NOT;
+
+terminal COMP_EQ;
+terminal COMP_DIST;
+terminal COMP_MAYOR;
+terminal COMP_MENOR;
+terminal COMP_MAYOR_EQ;
+terminal COMP_MENOR_EQ;
+
+terminal ABRE_LLAVE;
+terminal CIERRA_LLAVE;
+terminal ABRE_PAR;
+terminal CIERRA_PAR;
+terminal ABRE_LISTA;
+terminal CIERRA_LISTA;
+
+terminal COND_IF;
+terminal COND_ELSE;
+terminal CICLO;
+
+terminal TD_INT;
+terminal TD_FLOAT;
+terminal TD_STRING;
+
+terminal INIC_VARS;
+terminal COMA;
+terminal DOS_PUNTOS;
+terminal PUNTO_COMA;
+
+terminal LEER_TECLADO;
+terminal MOSTRAR_PANTALLA;
+terminal FUNC_INDICE;
+terminal FUNC_CONCAT;
+
+// Non terminales
+non terminal programa;
+non terminal sentencia;
+non terminal asignacion;
+non terminal iteracion;
+non terminal seleccion;
+non terminal expresion;
+non terminal condicion;
+non terminal comparacion;
+non terminal comparador;
+non terminal argumentos;
+non terminal termino;
 non terminal factor;
+non terminal fn_llamado;
+non terminal fn_nombre;
+non terminal declaracion;
+non terminal declaracion_lista;
+non terminal var_lista;
+non terminal var_tipo;
+non terminal lista;
+non terminal lista_rec;
 
 // Start Symbol Definition
-start with sentence;
+start with programa;
 
-sentence ::= assignment {: System.out.println("End"); :};
-assignment ::= IDENTIFIER ASSIG expression {: System.out.println("Assignment"); :};
-expression ::= expression PLUS term {: System.out.println("+"); :};
-expression ::= expression SUB term {: System.out.println("-"); :};
-expression ::= term {: System.out.println("Expression = Term"); :};
-term ::= term MULT factor {: System.out.println("*"); :};
-term ::= term DIV factor {: System.out.println("/"); :};
-term ::= factor {: System.out.println("Term = factor"); :};
-factor ::= IDENTIFIER:id  {: System.out.println("Id: " + id); :};
-factor ::= INTEGER_CONSTANT:constant {: System.out.println("Constant: " + constant ); :};
-factor ::= OPEN_BRACKET expression CLOSE_BRACKET {: System.out.println("Factor = (Expression)"); :};
+programa ::= sentencia {: print("programa ::= sentencia"); :};
+programa ::= programa sentencia {: print("programa ::= programa sentencia"); :};
+
+sentencia ::= asignacion PUNTO_COMA {: print("sentencia ::= asignacion;"); :};
+sentencia ::= fn_llamado PUNTO_COMA {: print("sentencia ::= fn_llamado;"); :};
+sentencia ::= declaracion PUNTO_COMA {: print("sentencia ::= declaracion;"); :};
+sentencia ::= iteracion {: print("sentencia ::= iteracion"); :};
+sentencia ::= seleccion {: print("sentencia ::= seleccion"); :};
+
+asignacion ::= ID OP_ASIG expresion {: print("asignacion ::= id = expresion"); :};
+
+iteracion ::= CICLO ABRE_PAR condicion CIERRA_PAR ABRE_LLAVE programa CIERRA_LLAVE {: print("iteracion ::= while(expresion) { programa }"); :};
+
+seleccion ::= COND_IF ABRE_PAR condicion CIERRA_PAR ABRE_LLAVE programa CIERRA_LLAVE {: print("seleccion ::= if(expresion) { programa }"); :};
+seleccion ::= COND_IF ABRE_PAR condicion CIERRA_PAR ABRE_LLAVE programa CIERRA_LLAVE COND_ELSE ABRE_LLAVE programa CIERRA_LLAVE {: print("seleccion ::= if(expresion) { programa } else { programa }"); :};
+
+condicion ::= comparacion {: print("condicion ::= comparacion"); :};
+condicion ::= OP_NOT comparacion {: print("condicion ::= not comparacion"); :};
+condicion ::= condicion OP_OR comparacion {: print("condicion ::= condicion or comparacion"); :};
+condicion ::= condicion OP_AND comparacion {: print("condicion ::= condicion and comparacion"); :};
+
+comparacion ::= expresion comparador expresion {: print("comparacion ::= expresion comparador expresion"); :};
+
+comparador ::= COMP_EQ  {: print("comparador ::= COMP_EQ"); :}
+             | COMP_DIST  {: print("comparador ::= COMP_DIST"); :}
+             | COMP_MAYOR  {: print("comparador ::= COMP_MAYOR"); :}
+             | COMP_MENOR  {: print("comparador ::= COMP_MENOR"); :}
+             | COMP_MAYOR_EQ  {: print("comparador ::= COMP_MAYOR_EQ"); :}
+             | COMP_MENOR_EQ  {: print("comparador ::= COMP_MENOR_EQ"); :};
+
+expresion ::= expresion OP_MAS termino {: print("expresion ::= expresion + termino"); :};
+expresion ::= expresion OP_MENOS termino {: print("expresion ::= expresion - termino"); :};
+expresion ::= termino {: print("expresion ::= termino"); :};
+
+termino ::= termino OP_MULT factor {: print("termino ::= termino * factor"); :};
+termino ::= termino OP_DIV factor {: print("termino ::= termino / factor"); :};
+termino ::= factor {: print("termino ::= factor"); :};
+
+factor ::= ID {: print("factor ::= ID"); :};
+factor ::= CTE {: print("factor ::= CTE"); :};
+factor ::= fn_llamado {: print("factor ::= fn_llamado"); :};
+factor ::= STRING_LITERAL {: print("factor ::= STRING_LITERAL"); :};
+factor ::= ABRE_PAR expresion CIERRA_PAR {: print("factor ::= (expresion)"); :};
+
+fn_llamado ::= fn_nombre ABRE_PAR argumentos CIERRA_PAR {: print("fn_llamado ::= fn_nombre(argumentos)"); :};
+
+fn_nombre ::= MOSTRAR_PANTALLA {: print("fn_nombre ::= MOSTRAR_PANTALLA"); :}
+            | LEER_TECLADO {: print("fn_nombre ::= LEER_TECLADO"); :}
+            | FUNC_INDICE {: print("fn_nombre ::= FUNC_INDICE"); :}
+            | FUNC_CONCAT {: print("fn_nombre ::= FUNC_CONCAT"); :};
+
+argumentos ::= factor {: print("argumentos ::= factor"); :};
+argumentos ::= argumentos COMA factor {: print("argumentos ::= factor, factor, ..."); :};
+argumentos ::= argumentos COMA lista {: print("argumentos ::= ..., [id, id, ...]"); :};
+
+declaracion ::= INIC_VARS ABRE_LLAVE declaracion_lista CIERRA_LLAVE {: print("declaracion ::= vars { declaracion_lista };"); :};
+
+declaracion_lista ::= var_lista DOS_PUNTOS var_tipo {: print("declaracion_lista ::= id, id, ... : var_tipo"); :};
+declaracion_lista ::= declaracion_lista COMA var_lista DOS_PUNTOS var_tipo {: print("declaracion_lista ::= id, id, ... : var_tipo,\n id, id, ... : var_tipo,\n ..."); :};
+
+var_lista ::= ID {: print("var_lista ::= id"); :};
+var_lista ::= var_lista COMA ID {: print("var_lista ::= id, id, ..."); :};
+
+var_tipo ::= TD_INT {: print("var_tipo ::= TD_INT"); :}
+           | TD_FLOAT {: print("var_tipo ::= TD_FLOAT"); :} 
+           | TD_STRING {: print("var_tipo ::= TD_STRING"); :};
+
+lista ::= ABRE_LISTA lista_rec CIERRA_LISTA {: print("lista ::= [factor, factor, ...]"); :};
+lista_rec ::= factor {: print("lista_rec ::= factor"); :};
+lista_rec ::= lista_rec COMA factor {: print("lista_rec ::= factor, factor, ..."); :};
