@@ -1,11 +1,14 @@
 package lyc.compiler;
 
 import java_cup.runtime.*;
+import java.util.ArrayList;
+import lyc.compiler.files.SymbolTableGenerator;
 
 class Parser;
 
 parser code {:
     public boolean syntaxErrors;
+    public ArrayList<String> id_list = new ArrayList();
 
     public void syntax_error(Symbol current_token) {
         report_error(
@@ -143,8 +146,10 @@ termino ::= termino OP_MULT factor {: print("termino ::= termino * factor"); :};
 termino ::= termino OP_DIV factor {: print("termino ::= termino / factor"); :};
 termino ::= factor {: print("termino ::= factor"); :};
 
-factor ::= ID {: print("factor ::= ID"); :};
-factor ::= CTE {: print("factor ::= CTE"); :};
+factor ::= ID {: print("factor ::= ID"); :}
+         | OP_MENOS ID {: print("factor ::= -ID"); :};
+factor ::= CTE {: print("factor ::= CTE"); :}
+         | OP_MENOS CTE {: print("factor ::= -CTE"); :};
 factor ::= fn_llamado {: print("factor ::= fn_llamado"); :};
 factor ::= STRING_LITERAL {: print("factor ::= STRING_LITERAL"); :};
 factor ::= ABRE_PAR expresion CIERRA_PAR {: print("factor ::= (expresion)"); :};
@@ -162,15 +167,15 @@ argumentos ::= argumentos COMA lista {: print("argumentos ::= ..., [id, id, ...]
 
 declaracion ::= INIC_VARS ABRE_LLAVE declaracion_lista CIERRA_LLAVE {: print("declaracion ::= vars { declaracion_lista };"); :};
 
-declaracion_lista ::= var_lista DOS_PUNTOS var_tipo PUNTO_COMA {: print("declaracion_lista ::= id, id, ... : var_tipo;"); :};
+declaracion_lista ::= var_lista DOS_PUNTOS var_tipo PUNTO_COMA {: print("declaracion_lista ::= id, id, ... : var_tipo; --> "); :};
 declaracion_lista ::= declaracion_lista var_lista DOS_PUNTOS var_tipo PUNTO_COMA {: print("declaracion_lista ::= id, id, ... : var_tipo;\n id, id, ... : var_tipo;\n ...;"); :};
 
-var_lista ::= ID {: print("var_lista ::= id"); :};
-var_lista ::= var_lista COMA ID {: print("var_lista ::= id, id, ..."); :};
+var_lista ::= ID:id {: print("var_lista ::= id"); id_list.add(id.toString()); :};
+var_lista ::= var_lista COMA ID:id {: print("var_lista ::= id, id, ..."); id_list.add(id.toString()); :};
 
-var_tipo ::= TD_INT {: print("var_tipo ::= TD_INT"); :}
-           | TD_FLOAT {: print("var_tipo ::= TD_FLOAT"); :} 
-           | TD_STRING {: print("var_tipo ::= TD_STRING"); :};
+var_tipo ::= TD_INT:type {: print("var_tipo ::= TD_INT"); SymbolTableGenerator.addVariablesType(id_list, type.toString()); :}
+           | TD_FLOAT:type {: print("var_tipo ::= TD_FLOAT"); SymbolTableGenerator.addVariablesType(id_list, type.toString()); :} 
+           | TD_STRING:type {: print("var_tipo ::= TD_STRING"); SymbolTableGenerator.addVariablesType(id_list, type.toString()); :};
 
 lista ::= ABRE_LISTA lista_rec CIERRA_LISTA {: print("lista ::= [factor, factor, ...]"); :};
 lista_rec ::= factor {: print("lista_rec ::= factor"); :};

@@ -1,0 +1,8 @@
+a = 1;
+b = 1;
+c = 2;
+
+if (a > b or c > b)
+{
+    write("a es mas grande o c es mas grande");
+}

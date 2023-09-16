@@ -10,7 +10,7 @@ vars {
 };
 
 #/ Asignaciones \#
-a = 3.;
+a = -3.;
 a = .1415;
 a = 3.14;
 b = a;

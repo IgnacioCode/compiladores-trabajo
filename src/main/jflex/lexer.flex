@@ -25,30 +25,28 @@ import lyc.compiler.files.SymbolTableGenerator;
       return new Symbol(type, yyline, yycolumn);
   }
 
-  private Symbol symbol(int type, String texto) {
-      //System.out.println("Token: " + texto);
+  // Comentado para que el parser reconozca el valor de los simbolos
+  /*private Symbol symbol(int type, String texto) {
+    //System.out.println("Token: " + texto);
 
-    if(type == ParserSym.ID){
-      
+    if(type == ParserSym.ID) {
       SymbolTableGenerator.addVariable(texto);
-    }
-    if(type == ParserSym.CTE){
-      System.out.println("ENTRE POR CTE");
-      SymbolTableGenerator.addConstant(texto,texto);
+    } else if(type == ParserSym.CTE) {
+      SymbolTableGenerator.addConstant(texto);
+    } else if(type == ParserSym.STRING_LITERAL) {
+      SymbolTableGenerator.addStringLiteral(texto);
     }
 
-      return new Symbol(type, yyline, yycolumn);
-  }
+    return new Symbol(type, yyline, yycolumn);
+  }*/
 
   private Symbol symbol(int type, Object value) {
-    System.out.println("ENTRE POR ID");
-    if(type == ParserSym.ID){
-      
-      SymbolTableGenerator.addVariable((String)value);
-    }
-    if(type == ParserSym.CTE){
-      System.out.println("ENTRE POR CTE");
-      SymbolTableGenerator.addConstant((String)value,(String)value);
+    if(type == ParserSym.ID) {
+      SymbolTableGenerator.addVariable(value.toString());
+    } else if(type == ParserSym.CTE) {
+      SymbolTableGenerator.addConstant(value.toString());
+    } else if(type == ParserSym.STRING_LITERAL) {
+      SymbolTableGenerator.addStringLiteral(value.toString());
     }
 
     return new Symbol(type, yyline, yycolumn, value);
@@ -146,9 +144,9 @@ Float = (\.)?{Integer}(\.[0-9]*)?
   {COND_ELSE}                              { return symbol(ParserSym.COND_ELSE, "COND_ELSE"); }
   {CICLO}                                  { return symbol(ParserSym.CICLO, "CICLO"); }
 
-  {TD_INT}                                 { return symbol(ParserSym.TD_INT, "TD_INT"); }
-  {TD_FLOAT}                               { return symbol(ParserSym.TD_FLOAT, "TD_FLOAT"); }
-  {TD_STRING}                              { return symbol(ParserSym.TD_STRING, "TD_STRING"); }
+  {TD_INT}                                 { return symbol(ParserSym.TD_INT, "int"); }
+  {TD_FLOAT}                               { return symbol(ParserSym.TD_FLOAT, "float"); }
+  {TD_STRING}                              { return symbol(ParserSym.TD_STRING, "string"); }
 
   {INIC_VARS}                              { return symbol(ParserSym.INIC_VARS, "INIC_VARS"); }
   {COMA}                                   { return symbol(ParserSym.COMA, "COMA"); }
@@ -164,9 +162,9 @@ Float = (\.)?{Integer}(\.[0-9]*)?
   {ID}                                     { if (yylength() <= STRING_MAX_LENGTH) return symbol(ParserSym.ID, yytext()); 
                                              else throw new InvalidLengthException("Longitud del identificador supera el tamaño maximo."); }
   {Integer}                                { if (yylength() <= INT_MAX_LENGTH) return symbol(ParserSym.CTE, yytext()); 
-                                             else throw new InvalidLengthException("Supera el valor maximo de un numero int."); }
+                                             else throw new InvalidIntegerException("Supera el valor maximo de un numero int."); }
   {Float}                                  { if (yylength() <= FLOAT_MAX_LENGTH) return symbol(ParserSym.CTE, yytext()); 
-                                             else throw new InvalidLengthException("Supera el valor maximo de un numero float."); }
+                                             else throw new InvalidFloatException("Supera el valor maximo de un numero float."); }
   {StringLiteral}                          { if (yylength() <= STRING_MAX_LENGTH) return symbol(ParserSym.STRING_LITERAL, yytext());
                                              else throw new InvalidLengthException("String literal supera el tamaño maximo."); }
 

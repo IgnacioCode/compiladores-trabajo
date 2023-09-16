@@ -8,19 +8,18 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.io.FileInputStream;
 
 import static com.google.common.truth.Truth.assertThat;
 import static lyc.compiler.Constants.EXAMPLES_ROOT_DIRECTORY;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@Disabled
 public class ParserTest {
 
     @Test
     public void assignmentWithExpression() throws Exception {
-        compilationSuccessful("c=d*(e-21)/4");
+        compilationSuccessful("c = -d * (e-21) / 4;");
     }
 
     @Test
@@ -92,10 +91,8 @@ public class ParserTest {
     }
 
     private String readFromFile(String fileName) throws IOException {
-        URL url = new URL(EXAMPLES_ROOT_DIRECTORY + "/%s".formatted(fileName));
-        assertThat(url).isNotNull();
-        return IOUtils.toString(url.openStream(), StandardCharsets.UTF_8);
+        InputStream input = new FileInputStream(EXAMPLES_ROOT_DIRECTORY + "/%s".formatted(fileName));
+        return IOUtils.toString(input, StandardCharsets.UTF_8);
     }
-
 
 }

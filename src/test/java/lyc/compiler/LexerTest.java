@@ -2,6 +2,7 @@ package lyc.compiler;
 
 import lyc.compiler.factories.LexerFactory;
 import lyc.compiler.model.CompilerException;
+import lyc.compiler.model.InvalidFloatException;
 import lyc.compiler.model.InvalidIntegerException;
 import lyc.compiler.model.InvalidLengthException;
 import lyc.compiler.model.UnknownCharacterException;
@@ -17,16 +18,13 @@ import static com.google.common.truth.Truth.assertThat;
 import static lyc.compiler.constants.Constants.STRING_MAX_LENGTH;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-
-@Disabled
 public class LexerTest {
 
   private Lexer lexer;
 
-
   @Test
   public void comment() throws Exception{
-    scan("/*This is a comment*/");
+    scan("#/This is a comment\\#");
     assertThat(nextToken()).isEqualTo(ParserSym.EOF);
   }
 
@@ -54,10 +52,20 @@ public class LexerTest {
     });
   }
 
+  //@Disabled("No deberia el parser analizar si un numero es negativo?")
   @Test
   public void invalidNegativeIntegerConstantValue() {
     assertThrows(InvalidIntegerException.class, () -> {
       scan("%d".formatted(-9223372036854775807L));
+      nextToken(); //OP_MENOS
+      nextToken(); //Integer
+    });
+  }
+
+  @Test
+  public void invalidPositiveFloatConstantValue() {
+    assertThrows(InvalidFloatException.class, () -> {
+      scan("%f".formatted(92233720368.54775807999));
       nextToken();
     });
   }
@@ -70,11 +78,11 @@ public class LexerTest {
     assertThat(nextToken()).isEqualTo(ParserSym.OP_ASIG);
     assertThat(nextToken()).isEqualTo(ParserSym.ID);
     assertThat(nextToken()).isEqualTo(ParserSym.OP_MULT);
-    assertThat(nextToken()).isEqualTo(ParserSym.ABRE_LLAVE);
+    assertThat(nextToken()).isEqualTo(ParserSym.ABRE_PAR);
     assertThat(nextToken()).isEqualTo(ParserSym.ID);
     assertThat(nextToken()).isEqualTo(ParserSym.OP_MENOS);
     assertThat(nextToken()).isEqualTo(ParserSym.CTE);
-    assertThat(nextToken()).isEqualTo(ParserSym.CIERRA_LLAVE);
+    assertThat(nextToken()).isEqualTo(ParserSym.CIERRA_PAR);
     assertThat(nextToken()).isEqualTo(ParserSym.OP_DIV);
     assertThat(nextToken()).isEqualTo(ParserSym.CTE);
     assertThat(nextToken()).isEqualTo(ParserSym.EOF);
