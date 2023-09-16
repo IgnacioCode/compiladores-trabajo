@@ -73,6 +73,8 @@ non terminal iteracion;
 non terminal seleccion;
 non terminal expresion;
 non terminal condicion;
+non terminal termino_log;
+non terminal factor_log;
 non terminal comparacion;
 non terminal comparador;
 non terminal argumentos;
@@ -106,10 +108,23 @@ iteracion ::= CICLO ABRE_PAR condicion CIERRA_PAR ABRE_LLAVE programa CIERRA_LLA
 seleccion ::= COND_IF ABRE_PAR condicion CIERRA_PAR ABRE_LLAVE programa CIERRA_LLAVE {: print("seleccion ::= if(expresion) { programa }"); :};
 seleccion ::= COND_IF ABRE_PAR condicion CIERRA_PAR ABRE_LLAVE programa CIERRA_LLAVE COND_ELSE ABRE_LLAVE programa CIERRA_LLAVE {: print("seleccion ::= if(expresion) { programa } else { programa }"); :};
 
-condicion ::= comparacion {: print("condicion ::= comparacion"); :};
-condicion ::= OP_NOT comparacion {: print("condicion ::= not comparacion"); :};
-condicion ::= condicion OP_OR comparacion {: print("condicion ::= condicion or comparacion"); :};
-condicion ::= condicion OP_AND comparacion {: print("condicion ::= condicion and comparacion"); :};
+condicion ::= condicion OP_OR termino_log {: print("condicion ::= condicion or termino_log"); :}
+            | termino_log {: print("condicion ::= termino_log"); :}
+            | condicion OP_OR ID {: print("condicion ::= condicion or ID"); :}
+            | ID OP_OR termino_log {: print("condicion ::= ID or termino_log"); :}
+            | ID OP_OR ID {: print("condicion ::= ID or ID"); :};
+
+termino_log ::= termino_log OP_AND factor_log {: print("termino_log ::= condicion or factor_log"); :}
+            | factor_log {: print("termino_log ::= factor_log"); :}
+            | termino_log OP_AND ID {: print("termino_log ::= condicion and ID"); :}
+            | ID OP_AND factor_log {: print("termino_log ::= ID and factor_log"); :}
+            | ID OP_AND ID {: print("termino_log ::= ID and ID"); :};
+
+factor_log ::= comparacion {: print("factor_log ::= comparacion"); :}
+            | ABRE_PAR condicion CIERRA_PAR {: print("factor_log ::= (condicion)"); :}
+            | OP_NOT ID {: print("factor_log ::= not ID"); :}
+            | OP_NOT comparacion {: print("factor_log ::= not comparacion"); :}
+            | OP_NOT ABRE_PAR condicion CIERRA_PAR {: print("factor_log ::= not (condicion)"); :};
 
 comparacion ::= expresion comparador expresion {: print("comparacion ::= expresion comparador expresion"); :};
 
@@ -147,8 +162,8 @@ argumentos ::= argumentos COMA lista {: print("argumentos ::= ..., [id, id, ...]
 
 declaracion ::= INIC_VARS ABRE_LLAVE declaracion_lista CIERRA_LLAVE {: print("declaracion ::= vars { declaracion_lista };"); :};
 
-declaracion_lista ::= var_lista DOS_PUNTOS var_tipo {: print("declaracion_lista ::= id, id, ... : var_tipo"); :};
-declaracion_lista ::= declaracion_lista COMA var_lista DOS_PUNTOS var_tipo {: print("declaracion_lista ::= id, id, ... : var_tipo,\n id, id, ... : var_tipo,\n ..."); :};
+declaracion_lista ::= var_lista DOS_PUNTOS var_tipo PUNTO_COMA {: print("declaracion_lista ::= id, id, ... : var_tipo;"); :};
+declaracion_lista ::= declaracion_lista var_lista DOS_PUNTOS var_tipo PUNTO_COMA {: print("declaracion_lista ::= id, id, ... : var_tipo;\n id, id, ... : var_tipo;\n ...;"); :};
 
 var_lista ::= ID {: print("var_lista ::= id"); :};
 var_lista ::= var_lista COMA ID {: print("var_lista ::= id, id, ..."); :};

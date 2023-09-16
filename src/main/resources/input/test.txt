@@ -4,9 +4,9 @@
 \#
 
 vars {
-    a, b : float,
-    i, MAX : int,
-    str1, str2 : string
+    a, b : float;
+    i, MAX : int;
+    str1, str2 : string;
 };
 
 #/ Asignaciones \#
@@ -28,7 +28,7 @@ while (i < MAX) {
     }
     else {
         #/ loop dentro de un loop \#
-        vars { j : int };
+        vars { j : int; };
         j = MAX * #/ comentario en medio \# 2;
 
         while (j > MAX and j - i < MAX) {
@@ -42,6 +42,22 @@ while (i < MAX) {
 
 b = FirstIndexOf(a, [1,b,2,5,z,C]);
 str1 = ConcatenarConRecorte("Hola", "Mundo", 2);
+
+if (a or not b) {
+write ("se cumple a o no b");
+}
+
+if ((x>5) or (y<=10)) {
+write("hola");
+}
+
+if ((a or b) and (c and not d)) {
+write("se cumple la condicion");
+}
+
+if ((not a or not b) and not(c and not d)) {
+write("se cumple la condicion");
+}
 
 #/ Errores \#
 
