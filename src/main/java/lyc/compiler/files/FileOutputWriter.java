@@ -1,5 +1,6 @@
 package lyc.compiler.files;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -14,9 +15,11 @@ public final class FileOutputWriter {
 
     public static void writeOutput(String fileName, FileGenerator fileGenerator) {
         createOutputDirectory();
+        
       try(FileWriter fileWriter = new FileWriter("%s/%s".formatted(OUTPUT_DIRECTORY, fileName))) {
           fileGenerator.generate(fileWriter);
           fileWriter.flush();
+          fileWriter.close();
       } catch (IOException e) {
           System.err.println("Error trying to create file " + e.getMessage());
       }

@@ -4,6 +4,7 @@ import java_cup.runtime.Symbol;
 import lyc.compiler.ParserSym;
 import lyc.compiler.model.*;
 import static lyc.compiler.constants.Constants.*;
+import lyc.compiler.files.SymbolTableGenerator;
 
 %%
 
@@ -26,10 +27,30 @@ import static lyc.compiler.constants.Constants.*;
 
   private Symbol symbol(int type, String texto) {
       //System.out.println("Token: " + texto);
+
+    if(type == ParserSym.ID){
+      
+      SymbolTableGenerator.addVariable(texto);
+    }
+    if(type == ParserSym.CTE){
+      System.out.println("ENTRE POR CTE");
+      SymbolTableGenerator.addConstant(texto,texto);
+    }
+
       return new Symbol(type, yyline, yycolumn);
   }
 
   private Symbol symbol(int type, Object value) {
+    System.out.println("ENTRE POR ID");
+    if(type == ParserSym.ID){
+      
+      SymbolTableGenerator.addVariable((String)value);
+    }
+    if(type == ParserSym.CTE){
+      System.out.println("ENTRE POR CTE");
+      SymbolTableGenerator.addConstant((String)value,(String)value);
+    }
+
     return new Symbol(type, yyline, yycolumn, value);
   }
 %}
