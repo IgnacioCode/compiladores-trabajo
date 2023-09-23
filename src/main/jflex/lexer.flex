@@ -108,8 +108,8 @@ Digito = [0-9]
 WhiteSpace = {LineTerminator} | {Identation}
 ID = {Letra}({Letra}|{Digito})*
 StringLiteral = \"(.[^\"]*)\"
-Integer = [1-9][0-9]*
-Float = (\.)?{Integer}(\.[0-9]*)?
+Integer = [1-9]{Digito}*
+Float = \.{Digito}+ | {Digito}+\.{Digito}+ | {Integer}+\.
 
 
 %%

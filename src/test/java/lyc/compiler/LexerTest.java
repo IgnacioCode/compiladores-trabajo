@@ -65,7 +65,7 @@ public class LexerTest {
   @Test
   public void invalidPositiveFloatConstantValue() {
     assertThrows(InvalidFloatException.class, () -> {
-      scan("%f".formatted(92233720368.54775807999));
+      scan("92233720368.54775807999");
       nextToken();
     });
   }
