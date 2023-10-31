@@ -2,7 +2,7 @@ package lyc.compiler;
 
 import java_cup.runtime.*;
 import java.util.ArrayList;
-import lyc.compiler.files.SymbolTableGenerator;
+import lyc.compiler.files.SymbolHashTableGenerator;
 
 class Parser;
 
@@ -16,25 +16,25 @@ parser code {:
             ", column " + current_token.right + "\n", null
         );
     }
-
-    private void print(String str) {
-        System.out.println("Regla: " + str);
-    }
 :};
 
-// terminales
-terminal CTE;
-terminal ID;
-terminal STRING_LITERAL;
+// -- Terminales -- //
+terminal SymbolHashTableGenerator.VariableTypes TIPO;
 
-terminal OP_ASIG;
-terminal OP_MAS;
+terminal ID;
+terminal CTE_INT;
+terminal CTE_FLOAT;
+terminal CTE_STRING;
+
 terminal OP_MENOS;
+terminal OP_MAS;
 terminal OP_MULT;
 terminal OP_DIV;
-terminal OP_AND;
-terminal OP_OR;
-terminal OP_NOT;
+terminal OP_ASIG;
+
+terminal COMA;
+terminal DOS_PUNTOS;
+terminal PUNTO_COMA;
 
 terminal COMP_EQ;
 terminal COMP_DIST;
@@ -50,133 +50,127 @@ terminal CIERRA_PAR;
 terminal ABRE_LISTA;
 terminal CIERRA_LISTA;
 
+terminal OP_AND;
+terminal OP_OR;
+terminal OP_NOT;
 terminal COND_IF;
 terminal COND_ELSE;
 terminal CICLO;
-
-terminal TD_INT;
-terminal TD_FLOAT;
-terminal TD_STRING;
-
 terminal INIC_VARS;
-terminal COMA;
-terminal DOS_PUNTOS;
-terminal PUNTO_COMA;
 
 terminal LEER_TECLADO;
 terminal MOSTRAR_PANTALLA;
 terminal FUNC_INDICE;
 terminal FUNC_CONCAT;
 
-// Non terminales
+// -- No Terminales -- //
 non terminal programa;
 non terminal sentencia;
 non terminal asignacion;
 non terminal iteracion;
 non terminal seleccion;
-non terminal expresion;
+
+non terminal String expresion;
+non terminal String termino;
+non terminal String factor;
+non terminal String constant;
+
 non terminal condicion;
+non terminal conjuncion;
 non terminal termino_log;
-non terminal factor_log;
 non terminal comparacion;
 non terminal comparador;
 non terminal argumentos;
-non terminal termino;
-non terminal factor;
-non terminal fn_llamado;
-non terminal fn_nombre;
+non terminal interna_call;
+non terminal interna_id;
+non terminal args_lista;
 non terminal declaracion;
-non terminal declaracion_lista;
+non terminal decl_lista;
 non terminal var_lista;
-non terminal var_tipo;
-non terminal lista;
-non terminal lista_rec;
 
-// Start Symbol Definition
+// -- Start Symbol -- //
 start with programa;
 
-programa ::= sentencia {: print("programa ::= sentencia"); :};
-programa ::= programa sentencia {: print("programa ::= programa sentencia"); :};
-
-sentencia ::= asignacion PUNTO_COMA {: print("sentencia ::= asignacion;"); :};
-sentencia ::= fn_llamado PUNTO_COMA {: print("sentencia ::= fn_llamado;"); :};
-sentencia ::= declaracion PUNTO_COMA {: print("sentencia ::= declaracion;"); :};
-sentencia ::= iteracion {: print("sentencia ::= iteracion"); :};
-sentencia ::= seleccion {: print("sentencia ::= seleccion"); :};
-
-asignacion ::= ID OP_ASIG expresion {: print("asignacion ::= id = expresion"); :};
-
-iteracion ::= CICLO ABRE_PAR condicion CIERRA_PAR ABRE_LLAVE programa CIERRA_LLAVE {: print("iteracion ::= while(expresion) { programa }"); :};
-
-seleccion ::= COND_IF ABRE_PAR condicion CIERRA_PAR ABRE_LLAVE programa CIERRA_LLAVE {: print("seleccion ::= if(expresion) { programa }"); :};
-seleccion ::= COND_IF ABRE_PAR condicion CIERRA_PAR ABRE_LLAVE programa CIERRA_LLAVE COND_ELSE ABRE_LLAVE programa CIERRA_LLAVE {: print("seleccion ::= if(expresion) { programa } else { programa }"); :};
-
-condicion ::= condicion OP_OR termino_log {: print("condicion ::= condicion or termino_log"); :}
-            | termino_log {: print("condicion ::= termino_log"); :}
-            | condicion OP_OR ID {: print("condicion ::= condicion or ID"); :}
-            | ID OP_OR termino_log {: print("condicion ::= ID or termino_log"); :}
-            | ID OP_OR ID {: print("condicion ::= ID or ID"); :};
-
-termino_log ::= termino_log OP_AND factor_log {: print("termino_log ::= condicion or factor_log"); :}
-            | factor_log {: print("termino_log ::= factor_log"); :}
-            | termino_log OP_AND ID {: print("termino_log ::= condicion and ID"); :}
-            | ID OP_AND factor_log {: print("termino_log ::= ID and factor_log"); :}
-            | ID OP_AND ID {: print("termino_log ::= ID and ID"); :};
-
-factor_log ::= comparacion {: print("factor_log ::= comparacion"); :}
-            | ABRE_PAR condicion CIERRA_PAR {: print("factor_log ::= (condicion)"); :}
-            | OP_NOT ID {: print("factor_log ::= not ID"); :}
-            | OP_NOT comparacion {: print("factor_log ::= not comparacion"); :}
-            | OP_NOT ABRE_PAR condicion CIERRA_PAR {: print("factor_log ::= not (condicion)"); :};
-
-comparacion ::= expresion comparador expresion {: print("comparacion ::= expresion comparador expresion"); :};
-
-comparador ::= COMP_EQ  {: print("comparador ::= COMP_EQ"); :}
-             | COMP_DIST  {: print("comparador ::= COMP_DIST"); :}
-             | COMP_MAYOR  {: print("comparador ::= COMP_MAYOR"); :}
-             | COMP_MENOR  {: print("comparador ::= COMP_MENOR"); :}
-             | COMP_MAYOR_EQ  {: print("comparador ::= COMP_MAYOR_EQ"); :}
-             | COMP_MENOR_EQ  {: print("comparador ::= COMP_MENOR_EQ"); :};
-
-expresion ::= expresion OP_MAS termino {: print("expresion ::= expresion + termino"); :};
-expresion ::= expresion OP_MENOS termino {: print("expresion ::= expresion - termino"); :};
-expresion ::= termino {: print("expresion ::= termino"); :};
-
-termino ::= termino OP_MULT factor {: print("termino ::= termino * factor"); :};
-termino ::= termino OP_DIV factor {: print("termino ::= termino / factor"); :};
-termino ::= factor {: print("termino ::= factor"); :};
-
-factor ::= ID {: print("factor ::= ID"); :}
-         | OP_MENOS ID {: print("factor ::= -ID"); :};
-factor ::= CTE {: print("factor ::= CTE"); :}
-         | OP_MENOS CTE {: print("factor ::= -CTE"); :};
-factor ::= fn_llamado {: print("factor ::= fn_llamado"); :};
-factor ::= STRING_LITERAL {: print("factor ::= STRING_LITERAL"); :};
-factor ::= ABRE_PAR expresion CIERRA_PAR {: print("factor ::= (expresion)"); :};
-
-fn_llamado ::= fn_nombre ABRE_PAR argumentos CIERRA_PAR {: print("fn_llamado ::= fn_nombre(argumentos)"); :};
-
-fn_nombre ::= MOSTRAR_PANTALLA {: print("fn_nombre ::= MOSTRAR_PANTALLA"); :}
-            | LEER_TECLADO {: print("fn_nombre ::= LEER_TECLADO"); :}
-            | FUNC_INDICE {: print("fn_nombre ::= FUNC_INDICE"); :}
-            | FUNC_CONCAT {: print("fn_nombre ::= FUNC_CONCAT"); :};
-
-argumentos ::= factor {: print("argumentos ::= factor"); :};
-argumentos ::= argumentos COMA factor {: print("argumentos ::= factor, factor, ..."); :};
-argumentos ::= argumentos COMA lista {: print("argumentos ::= ..., [id, id, ...]"); :};
-
-declaracion ::= INIC_VARS ABRE_LLAVE declaracion_lista CIERRA_LLAVE {: print("declaracion ::= vars { declaracion_lista };"); :};
-
-declaracion_lista ::= var_lista DOS_PUNTOS var_tipo PUNTO_COMA {: print("declaracion_lista ::= id, id, ... : var_tipo; --> "); :};
-declaracion_lista ::= declaracion_lista var_lista DOS_PUNTOS var_tipo PUNTO_COMA {: print("declaracion_lista ::= id, id, ... : var_tipo;\n id, id, ... : var_tipo;\n ...;"); :};
-
-var_lista ::= ID:id {: print("var_lista ::= id"); id_list.add(id.toString()); :};
-var_lista ::= var_lista COMA ID:id {: print("var_lista ::= id, id, ..."); id_list.add(id.toString()); :};
-
-var_tipo ::= TD_INT:type {: print("var_tipo ::= TD_INT"); SymbolTableGenerator.addVariablesType(id_list, type.toString()); :}
-           | TD_FLOAT:type {: print("var_tipo ::= TD_FLOAT"); SymbolTableGenerator.addVariablesType(id_list, type.toString()); :} 
-           | TD_STRING:type {: print("var_tipo ::= TD_STRING"); SymbolTableGenerator.addVariablesType(id_list, type.toString()); :};
-
-lista ::= ABRE_LISTA lista_rec CIERRA_LISTA {: print("lista ::= [factor, factor, ...]"); :};
-lista_rec ::= factor {: print("lista_rec ::= factor"); :};
-lista_rec ::= lista_rec COMA factor {: print("lista_rec ::= factor, factor, ..."); :};
+// -- Reglas -- //
+programa  ::= sentencia              {: :}
+            | programa sentencia     {: :}
+            ;
+sentencia ::= asignacion PUNTO_COMA   {: :}
+            | interna_call PUNTO_COMA {: :}
+            | declaracion PUNTO_COMA  {: :}
+            | iteracion               {: :}
+            | seleccion               {: :}
+            ;
+asignacion ::= ID:id OP_ASIG expresion:expr  {: SymbolHashTableGenerator.modVariable(id.toString(), expr); :}
+            ;
+iteracion ::= CICLO ABRE_PAR condicion CIERRA_PAR ABRE_LLAVE programa CIERRA_LLAVE {: :}
+            ;
+seleccion ::= COND_IF ABRE_PAR condicion CIERRA_PAR ABRE_LLAVE programa CIERRA_LLAVE {: :}
+            | COND_IF ABRE_PAR condicion CIERRA_PAR ABRE_LLAVE programa CIERRA_LLAVE COND_ELSE ABRE_LLAVE programa CIERRA_LLAVE {: :}
+            ;
+condicion ::= condicion OP_OR conjuncion {: :}
+            | conjuncion {: :}
+            ;
+conjuncion ::= conjuncion OP_AND termino_log
+            |  OP_NOT termino_log
+            |  termino_log
+            ;
+termino_log ::= comparacion {: :}
+            |   ABRE_PAR condicion CIERRA_PAR {: :}
+            ;
+comparacion ::= expresion comparador expresion {: :}
+            ;
+comparador ::= COMP_EQ  {: :}
+            |  COMP_DIST  {: :}
+            |  COMP_MAYOR  {: :}
+            |  COMP_MENOR  {: :}
+            |  COMP_MAYOR_EQ  {: :}
+            |  COMP_MENOR_EQ  {: :}
+            ;
+expresion ::= expresion:expr OP_MAS termino:term   {: RESULT = expr + term; :}
+            | expresion:expr OP_MENOS termino:term {: RESULT = expr + term; :}
+            | termino:term {: RESULT = term; :}
+            ;
+termino   ::= termino:term OP_MULT factor:fact {: RESULT = term + fact; :}
+            | termino:term OP_DIV factor:fact  {: RESULT = term + fact; :}
+            | factor:fact {: RESULT = fact; :}
+            ;
+factor    ::= ID:id                 {: RESULT = id.toString(); :}
+            | OP_MENOS ID:id        {: RESULT = '-' + id.toString(); :}
+            | constant:cte          {: RESULT = cte; :}
+            | OP_MENOS constant:cte {: RESULT = '-' + cte; :}
+            | ABRE_PAR expresion:expr CIERRA_PAR {: RESULT = expr; :}
+            | interna_call {: RESULT = "built-in"; :}
+            ;
+constant  ::= CTE_INT:cte     {: RESULT = cte.toString(); :}
+            | CTE_FLOAT:cte   {: RESULT = cte.toString(); :}
+            | CTE_STRING:cte  {: RESULT = cte.toString(); :}
+            ;
+interna_call ::= interna_id ABRE_PAR argumentos CIERRA_PAR {: :}
+            ;
+interna_id ::= MOSTRAR_PANTALLA {: :}
+            |  LEER_TECLADO {: :}
+            |  FUNC_INDICE {: :}
+            |  FUNC_CONCAT {: :}
+            ;
+argumentos ::= factor {: :}
+            |  argumentos COMA factor {: :}
+            |  argumentos COMA ABRE_LISTA args_lista CIERRA_LISTA {: :}
+            ;
+args_lista ::= factor {: :}
+            |  args_lista COMA factor {: :}
+            ;
+declaracion ::= INIC_VARS ABRE_LLAVE decl_lista CIERRA_LLAVE {: :}
+            ;
+decl_lista ::= var_lista DOS_PUNTOS TIPO:type PUNTO_COMA {:
+                    id_list.forEach(id -> SymbolHashTableGenerator.addVariable(id, type));
+                    id_list = new ArrayList();
+                :}
+            |  decl_lista var_lista DOS_PUNTOS TIPO:type PUNTO_COMA {:
+                    id_list.forEach(id -> SymbolHashTableGenerator.addVariable(id, type));
+                    id_list = new ArrayList();
+                :}
+            ;
+var_lista ::= ID:id {: id_list.add(id.toString()); :}
+            | var_lista COMA ID:id {: id_list.add(id.toString()); :}
+            ;

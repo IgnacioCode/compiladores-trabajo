@@ -16,5 +16,4 @@ public final class ParserFactory {
         return new Parser(LexerFactory.create(reader));
     }
 
-
 }

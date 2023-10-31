@@ -1,15 +1,12 @@
-#/ 
-    Creando
-    variables
-\#
-
+#/ -- Init Vars -- \#
 vars {
     a, b : float;
     i, MAX : int;
     str1, str2 : string;
 };
 
-#/ Asignaciones \#
+
+#/ -- Asignaciones -- \#
 a = -3.;
 a = .1415;
 a = 3.14;
@@ -19,17 +16,17 @@ MAX = 10;
 str1 = "@sdADa Sjfla%d  fg";
 str2 = read(str1);
 
-#/ Logica \#
+
+#/ -- Logica -- \#
 while (i < MAX) {
     write("%d\n", i); #/ Funcion reservada \#
 
-    if (a - b > i) { #/ condicional if-else \#
+    if (a - b > i) {  #/ condicional if-else \#
         c = d * (e-21) / 4;
-    }
-    else {
+    } else {
         #/ loop dentro de un loop \#
         vars { j : int; };
-        j = MAX * #/ comentario en medio \# 2;
+        j = MAX *  #/ comentario en medio \#  2;
 
         while (j > MAX and j - i < MAX) {
             if (not b != a) {
@@ -43,32 +40,23 @@ while (i < MAX) {
 b = FirstIndexOf(a, [1,b,2,5,z,C]);
 str1 = ConcatenarConRecorte("Hola", "Mundo", 2);
 
-if (a or not b) {
-write ("se cumple a o no b");
+if (not (x > 5) or y <= 10) {
+    write("hola");
 }
 
-if ((x>5) or (y<=10)) {
-write("hola");
-}
 
-if ((a or b) and (c and not d)) {
-write("se cumple la condicion");
-}
-
-if ((not a or not b) and not(c and not d)) {
-write("se cumple la condicion");
-}
-
-#/ Errores \#
-
+#/ -- Errores -- \#
 #/ Compilation error: String literal supera el tamaño maximo. \#
-//str2 = "RVg1ceT8I42ttpmcg1WmcBPFW4ZevF X2fGdRgKuQc2OulDrkoY2E3Xe8BiAV";
+// str2 = "RVg1ceT8I42ttpmcg1WmcBPFW4ZevF X2fGdRgKuQc2OulDrkoY2E3Xe8BiAV";
 
 #/ Compilation error: Longitud del identificador supera el tamaño maximo. \#
-//p0jZaE1xBYfLzkNjfHoLV5StAkOzb9o2dWMEZ2qt3XxZ = 1;
+// p0jZaE1xBYfLzkNjfHoLV5StAkOzb9o2dWMEZ2qt3XxZ = 1;
 
 #/ Compilation error: Supera el valor maximo de un numero int. \#
-//MAX = 123456879;
+// MAX = 123456879;
+
+#/ Variable previamente definida \#
+// vars { a : int; };
 
 #/ Compilation error: Supera el valor maximo de un numero float. \#
-//a = 12345.123456789;
+// a = 12345.123456789;

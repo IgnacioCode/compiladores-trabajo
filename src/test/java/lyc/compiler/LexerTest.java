@@ -9,7 +9,6 @@ import lyc.compiler.model.UnknownCharacterException;
 import org.apache.commons.text.CharacterPredicates;
 import org.apache.commons.text.RandomStringGenerator;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -23,7 +22,7 @@ public class LexerTest {
   private Lexer lexer;
 
   @Test
-  public void comment() throws Exception{
+  public void comment() throws Exception {
     scan("#/This is a comment\\#");
     assertThat(nextToken()).isEqualTo(ParserSym.EOF);
   }
@@ -52,13 +51,13 @@ public class LexerTest {
     });
   }
 
-  //@Disabled("No deberia el parser analizar si un numero es negativo?")
+  // @Disabled("No deberia el parser analizar si un numero es negativo?")
   @Test
   public void invalidNegativeIntegerConstantValue() {
     assertThrows(InvalidIntegerException.class, () -> {
       scan("%d".formatted(-9223372036854775807L));
-      nextToken(); //OP_MENOS
-      nextToken(); //Integer
+      nextToken(); // OP_MENOS
+      nextToken(); // Integer
     });
   }
 
@@ -70,7 +69,6 @@ public class LexerTest {
     });
   }
 
-
   @Test
   public void assignmentWithExpressions() throws Exception {
     scan("c=d*(e-21)/4");
@@ -81,10 +79,10 @@ public class LexerTest {
     assertThat(nextToken()).isEqualTo(ParserSym.ABRE_PAR);
     assertThat(nextToken()).isEqualTo(ParserSym.ID);
     assertThat(nextToken()).isEqualTo(ParserSym.OP_MENOS);
-    assertThat(nextToken()).isEqualTo(ParserSym.CTE);
+    assertThat(nextToken()).isEqualTo(ParserSym.CTE_INT);
     assertThat(nextToken()).isEqualTo(ParserSym.CIERRA_PAR);
     assertThat(nextToken()).isEqualTo(ParserSym.OP_DIV);
-    assertThat(nextToken()).isEqualTo(ParserSym.CTE);
+    assertThat(nextToken()).isEqualTo(ParserSym.CTE_INT);
     assertThat(nextToken()).isEqualTo(ParserSym.EOF);
   }
 
@@ -111,9 +109,9 @@ public class LexerTest {
 
   private static String getRandomString() {
     return new RandomStringGenerator.Builder()
-            .filteredBy(CharacterPredicates.LETTERS)
-            .withinRange('a', 'z')
-            .build().generate(STRING_MAX_LENGTH * 2);
+        .filteredBy(CharacterPredicates.LETTERS)
+        .withinRange('a', 'z')
+        .build().generate(STRING_MAX_LENGTH * 2);
   }
 
 }
