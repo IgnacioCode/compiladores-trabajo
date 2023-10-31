@@ -111,25 +111,25 @@ Float =  \.{Digito}+ | {Digito}+\.{Digito}*
                                   if (yylength() <= STRING_MAX_LENGTH)
                                     return symbol(ParserSym.ID, yytext());
                                   else
-                                    throw new InvalidLengthException("Longitud del identificador supera el tamaño maximo.");
+                                    throw new InvalidLengthException("[Lexer::Error] - Longitud del identificador supera el tamaño maximo permitido");
                                 }
   {Integer}                     { 
                                   if (yylength() <= INT_MAX_LENGTH)
                                     return symbol(ParserSym.CTE_INT, yytext());
                                   else
-                                    throw new InvalidIntegerException("Supera el valor maximo de un numero int.");
+                                    throw new InvalidIntegerException("[Lexer::Error] - El valor supera el numero maximo permitido para un entero");
                                 }
   {Float}                       { 
                                   if (yylength() <= FLOAT_MAX_LENGTH)
                                     return symbol(ParserSym.CTE_FLOAT, yytext());
                                   else
-                                    throw new InvalidFloatException("Supera el valor maximo de un numero float.");
+                                    throw new InvalidFloatException("[Lexer::Error] - El valor supera el numero maximo permitido para un flotante");
                                 }
   {String}                      { 
                                   if (yylength() <= STRING_MAX_LENGTH)
                                     return symbol(ParserSym.CTE_STRING, yytext());
                                   else
-                                    throw new InvalidLengthException("String literal supera el tamaño maximo.");
+                                    throw new InvalidLengthException("[Lexer::Error] - La cadena supera la longitud maxima permitida para una string");
                                 }
 
   {Comment} | {WhiteSpace}      { /* ignore */ }

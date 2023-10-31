@@ -12,7 +12,7 @@ parser code {:
 
     public void syntax_error(Symbol current_token) {
         report_error(
-            "Syntax error at line " + (current_token.left + 1) + 
+            "[Syntax::Error] at line " + (current_token.left + 1) + 
             ", column " + current_token.right + "\n", null
         );
     }
@@ -101,7 +101,7 @@ sentencia ::= asignacion PUNTO_COMA   {: :}
             | iteracion               {: :}
             | seleccion               {: :}
             ;
-asignacion ::= ID:id OP_ASIG expresion:expr  {: SymbolHashTableGenerator.modVariable(id.toString(), expr); :}
+asignacion ::= ID:id OP_ASIG expresion:expr  {: :}
             ;
 iteracion ::= CICLO ABRE_PAR condicion CIERRA_PAR ABRE_LLAVE programa CIERRA_LLAVE {: :}
             ;
@@ -112,10 +112,10 @@ condicion ::= condicion OP_OR conjuncion {: :}
             | conjuncion {: :}
             ;
 conjuncion ::= conjuncion OP_AND termino_log
-            |  OP_NOT termino_log
             |  termino_log
             ;
 termino_log ::= comparacion {: :}
+            |   OP_NOT termino_log
             |   ABRE_PAR condicion CIERRA_PAR {: :}
             ;
 comparacion ::= expresion comparador expresion {: :}

@@ -21,7 +21,7 @@ str2 = read(str1);
 while (i < MAX) {
     write("%d\n", i); #/ Funcion reservada \#
 
-    if (a - b > i) {  #/ condicional if-else \#
+    if (a - b > i and not (b > a)) {  #/ condicional if-else \#
         c = d * (e-21) / 4;
     } else {
         #/ loop dentro de un loop \#

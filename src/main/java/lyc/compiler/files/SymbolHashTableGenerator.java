@@ -93,7 +93,7 @@ public class SymbolHashTableGenerator implements FileGenerator {
 
 	@Override
 	public void generate(FileWriter fileWriter) throws IOException {
-		int pad = maxWidth();
+		int pad = maxWidth() + 5;
 
 		fileWriter.write(Symbol.header(pad));
 		fileWriter.write("-".repeat(pad * 4) + "\n");
