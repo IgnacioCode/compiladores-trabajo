@@ -5,17 +5,21 @@ import java.util.ArrayList;
 import lyc.compiler.model.*;
 import lyc.compiler.files.SymbolHashTableGenerator;
 import lyc.compiler.files.IntermediateCodeGenerator;
+import lyc.compiler.errors.ErrorHandling;
 
 class Parser;
 
 parser code {:
+    public int errorCount = 0;
     public boolean syntaxErrors;
     public ArrayList<String> id_list = new ArrayList();
 
     public void syntax_error(Symbol current_token) {
         report_error(
-            "[Syntax::Error] at line " + (current_token.left + 1) + 
-            ", column " + current_token.right + "\n", null
+            ErrorHandling.formatError(
+                "Syntax",
+                "at line " + (current_token.left + 1) + ", column " + current_token.right + "\n"
+            ), null
         );
     }
 :};
@@ -99,7 +103,7 @@ start with asm;
 
 
 // -- Reglas -- //
-asm       ::= programa
+asm       ::= programa  {: RESULT = errorCount; :}
             ;
 programa  ::= sentencia
             | programa sentencia
@@ -151,7 +155,8 @@ expresion ::= expresion:expr OP_MAS termino:term    {:
                 if (expr != null && term != null) {
                     if (expr == term) { IntermediateCodeGenerator.insert("+"); }
                     else { 
-                        System.err.println("[Semantic::Error] - No se puede sumar un \"" + expr.name() + "\" con un \"" + term.name() + "\".");
+                        System.err.println(ErrorHandling.formatError("Semantic", "No se puede sumar un \"" + expr.name() + "\" con un \"" + term.name() + "\"."));
+                        errorCount++;
                     }
                 }
             :}
@@ -159,7 +164,8 @@ expresion ::= expresion:expr OP_MAS termino:term    {:
                 if (expr != null && term != null) {
                     if (expr == term) { IntermediateCodeGenerator.insert("-"); }
                     else { 
-                        System.err.println("[Semantic::Error] - No se puede restar un \"" + expr.name() + "\" con un \"" + term.name() + "\".");
+                        System.err.println(ErrorHandling.formatError("Semantic", "No se puede restar un \"" + expr.name() + "\" con un \"" + term.name() + "\"."));
+                        errorCount++;
                     }
                 }
             :}
@@ -169,7 +175,8 @@ termino   ::= termino:term OP_MULT factor:fact  {:
                 if (term != null && fact != null) {
                     if (term == fact) { IntermediateCodeGenerator.insert("*"); }
                     else { 
-                        System.err.println("[Semantic::Error] - No se puede multiplicar un \"" + term.name() + "\" con un \"" + fact.name() + "\".");
+                        System.err.println(ErrorHandling.formatError("Semantic", "No se puede multiplicar un \"" + term.name() + "\" con un \"" + fact.name() + "\"."));
+                        errorCount++;
                     }
                 }
             :}
@@ -177,7 +184,8 @@ termino   ::= termino:term OP_MULT factor:fact  {:
                 if (term != null && fact != null) {
                     if (term == fact) { IntermediateCodeGenerator.insert("/"); } 
                     else { 
-                        System.err.println("[Semantic::Error] - No se puede dividir un \"" + term.name() + "\" con un \"" + fact.name() + "\".");
+                        System.err.println(ErrorHandling.formatError("Semantic", "No se puede dividir un \"" + term.name() + "\" con un \"" + fact.name() + "\"."));
+                        errorCount++;
                     }
                 }
             :}
@@ -188,7 +196,8 @@ factor    ::= ID:id  {:
                     IntermediateCodeGenerator.insert(id.toString());
                     RESULT = SymbolHashTableGenerator.variableType(id.toString());
                 } else {
-                    System.err.println("[Semantic::Error] - Variable \"" + id.toString() + "\" no fue previamente declarada.");
+                    System.err.println(ErrorHandling.formatError("Semantic", "Variable \"" + id.toString() + "\" no fue previamente declarada."));
+                    errorCount++;
                 }
             :}
             | OP_MENOS ID:id  {:
@@ -197,10 +206,12 @@ factor    ::= ID:id  {:
                         IntermediateCodeGenerator.insert('-' + id.toString());
                         RESULT = SymbolHashTableGenerator.variableType(id.toString());
                     } else {
-                        System.err.println("[Semantic::Error] - Variable \"" + id.toString() + "\" no puede ser negativa porque es de tipo \"string\".");
+                        System.err.println(ErrorHandling.formatError("Semantic", "Variable \"" + id.toString() + "\" no puede ser negativa porque es de tipo \"string\"."));
+                        errorCount++;
                     }
                 } else {
-                    System.err.println("[Semantic::Error] - Variable \"" + id.toString() + "\" no fue previamente declarada.");
+                    System.err.println(ErrorHandling.formatError("Semantic", "Variable \"" + id.toString() + "\" no fue previamente declarada."));
+                    errorCount++;
                 }
             :}
             | constant:cte           {: IntermediateCodeGenerator.insert(cte);  RESULT = SymbolHashTableGenerator.variableType(cte); :}
@@ -209,7 +220,8 @@ factor    ::= ID:id  {:
                     IntermediateCodeGenerator.insert('-' + cte);
                     RESULT = SymbolHashTableGenerator.variableType(cte);
                 } else {
-                        System.err.println("[Semantic::Error] - Constante \"" + cte + "\" no puede ser negativa porque es de tipo \"string\".");
+                        System.err.println(ErrorHandling.formatError("Semantic", "Constante \"" + cte + "\" no puede ser negativa porque es de tipo \"string\"."));
+                        errorCount++;
                 }
             :}
             | ABRE_PAR expresion:expr CIERRA_PAR  {: RESULT = expr; :}

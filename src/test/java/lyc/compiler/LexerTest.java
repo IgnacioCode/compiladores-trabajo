@@ -51,7 +51,6 @@ public class LexerTest {
     });
   }
 
-  // @Disabled("No deberia el parser analizar si un numero es negativo?")
   @Test
   public void invalidNegativeIntegerConstantValue() {
     assertThrows(InvalidIntegerException.class, () -> {
@@ -64,7 +63,7 @@ public class LexerTest {
   @Test
   public void invalidPositiveFloatConstantValue() {
     assertThrows(InvalidFloatException.class, () -> {
-      scan("%f".formatted(92233720368.54775807999));
+      scan("%f".formatted(37897897987897897989879879799223372036854775807999.789789798789789798987987979789789798789789798987987979));
       nextToken();
     });
   }

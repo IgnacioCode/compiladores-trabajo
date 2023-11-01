@@ -11,6 +11,8 @@ import lyc.compiler.files.SymbolHashTableGenerator;
 import java.io.IOException;
 import java.io.Reader;
 
+import java_cup.runtime.Symbol;
+
 public final class Compiler {
 
     private Compiler() {
@@ -24,7 +26,11 @@ public final class Compiler {
 
         try (Reader reader = FileFactory.create(args[0])) {
             Parser parser = ParserFactory.create(reader);
-            parser.parse();
+            Symbol sym = parser.parse();
+            if ((int) sym.value > 0) {
+                throw new Exception(sym.value + " error(s) detected.");
+            }
+
             FileOutputWriter.writeOutput("symbol-table.txt", new SymbolHashTableGenerator());
             FileOutputWriter.writeOutput("intermediate-code.txt", new IntermediateCodeGenerator());
             FileOutputWriter.writeOutput("final.asm", new AsmCodeGenerator());

@@ -3,6 +3,7 @@ package lyc.compiler;
 import java_cup.runtime.Symbol;
 import lyc.compiler.model.*;
 import static lyc.compiler.constants.Constants.*;
+import static lyc.compiler.errors.ErrorHandling.*;
 import lyc.compiler.files.SymbolHashTableGenerator;
 
 %%
@@ -108,28 +109,32 @@ Float =  \.{Digito}+ | {Digito}+\.{Digito}*
   "ConcatenarConRecorte"        { return symbol(ParserSym.FUNC_CONCAT);      }
 
   {ID}                          {
-                                  if (yylength() <= STRING_MAX_LENGTH)
+                                  if (yylength() <= STRING_MAX_LENGTH) {
                                     return symbol(ParserSym.ID, yytext());
-                                  else
-                                    throw new InvalidLengthException("[Lexer::Error] - Longitud del identificador supera el tamaño maximo permitido");
+                                  } else {
+                                    throw new InvalidLengthException(formatError("Lexical" , "Longitud del identificador \"" + yytext() + "\" supera el tamaño maximo permitido"));
+                                  }
                                 }
   {Integer}                     { 
-                                  if (yylength() <= INT_MAX_LENGTH)
+                                  if (validateInt(yytext())) {
                                     return symbol(ParserSym.CTE_INT, yytext());
-                                  else
-                                    throw new InvalidIntegerException("[Lexer::Error] - El valor supera el numero maximo permitido para un entero");
+                                  } else {
+                                    throw new InvalidIntegerException(formatError("Lexical", "El valor \"" + yytext() + "\" supera el numero maximo permitido para un entero"));
+                                  }
                                 }
   {Float}                       { 
-                                  if (yylength() <= FLOAT_MAX_LENGTH)
+                                  if (validateFloat(yytext())) {
                                     return symbol(ParserSym.CTE_FLOAT, yytext());
-                                  else
-                                    throw new InvalidFloatException("[Lexer::Error] - El valor supera el numero maximo permitido para un flotante");
+                                  } else {
+                                    throw new InvalidFloatException(formatError("Lexical", "El valor \"" + yytext() + "\" supera el numero maximo permitido para un flotante"));
+                                  }
                                 }
   {String}                      { 
-                                  if (yylength() <= STRING_MAX_LENGTH)
+                                  if (yylength() <= STRING_MAX_LENGTH) {
                                     return symbol(ParserSym.CTE_STRING, yytext());
-                                  else
-                                    throw new InvalidLengthException("[Lexer::Error] - La cadena supera la longitud maxima permitida para una string");
+                                  } else {
+                                    throw new InvalidLengthException(formatError("Lexical", "La cadena \"" + yytext() + "\" supera la longitud maxima permitida para una string"));
+                                  }
                                 }
 
   {Comment} | {WhiteSpace}      { /* ignore */ }

@@ -4,6 +4,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Hashtable;
 
+import lyc.compiler.errors.ErrorHandling;
 import lyc.compiler.model.InvalidTypeException;
 import lyc.compiler.model.VariablePreviouslyDefined;
 
@@ -106,7 +107,7 @@ public class SymbolHashTableGenerator implements FileGenerator {
 		try {
 			_addVariable(name, type);
 		} catch (VariablePreviouslyDefined e) {
-			System.err.println("[Semantic::Error] - " + e.getMessage());
+			System.err.println(ErrorHandling.formatError("Semantic", e.getMessage()));
 		}
 	}
 

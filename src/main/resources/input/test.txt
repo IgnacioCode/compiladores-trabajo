@@ -10,4 +10,6 @@ if (b > 0 or a == b) {
     a = 25;
 }
 
-c = b / a;
+c = b + a;
+
+vars { a, b, c : int; }
