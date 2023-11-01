@@ -113,14 +113,11 @@ public class SymbolHashTableGenerator implements FileGenerator {
 	public static void addConstant(String value, VariableTypes type) {
 		Symbol sym = type.equals(VariableTypes.STRING) ? new Symbol("_" + value, type, value, value.length())
 				: new Symbol('_' + value.replace('.', '_'), type, value);
-		symbolTable.put(sym.name, sym);
+		symbolTable.put(value, sym);
 	}
 
-	public static void modVariable(String name, String value) {
-		Symbol sym = symbolTable.get(name);
-		if (sym != null) {
-			sym.value = value;
-		}
+	public static boolean variableExists(String name) {
+		return symbolTable.containsKey(name);
 	}
 
 	public static VariableTypes castType(String type) throws InvalidTypeException {
@@ -130,6 +127,11 @@ public class SymbolHashTableGenerator implements FileGenerator {
 			case "string" -> VariableTypes.STRING;
 			default -> throw new InvalidTypeException("Tipo de dato no reconocido.");
 		};
+	}
+
+	public static VariableTypes variableType(String name) {
+		Symbol sym = symbolTable.get(name);
+		return (sym == null) ? null : sym.type;
 	}
 
 	private static void _addVariable(String name, VariableTypes type) throws VariablePreviouslyDefined {
