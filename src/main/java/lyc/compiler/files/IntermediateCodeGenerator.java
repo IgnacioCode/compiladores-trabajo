@@ -3,6 +3,7 @@ package lyc.compiler.files;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -13,6 +14,7 @@ public class IntermediateCodeGenerator implements FileGenerator {
     // fifo para escribir el assembler.
     public static Deque<Cell> intermediateStack = new ArrayDeque<Cell>(512);
     public static Deque<Cell> temporaryStack = new ArrayDeque<Cell>();
+    public static Deque<Loop> loopStack = new ArrayDeque<Loop>();
     private static Cell lastCMP = null;
 
     private static class Cell {
@@ -29,6 +31,17 @@ public class IntermediateCodeGenerator implements FileGenerator {
         }
     }
 
+    private static class Loop {
+        int id;
+        ArrayList<Cell> cells;
+        static int current = 0;
+
+        Loop() {
+            this.id = current++;
+            this.cells = new ArrayList<Cell>();
+        }
+    }
+
     @Override
     public void generate(FileWriter fileWriter) throws IOException {
         Iterator<Cell> iter = intermediateStack.descendingIterator();
@@ -40,8 +53,35 @@ public class IntermediateCodeGenerator implements FileGenerator {
 
     public static void insert(String... values) {
         for (String value : values) {
-            Cell c = new Cell(intermediateStack.size(), value);
+            Cell c = new Cell(intermediateStack.size() + 1, value);
             intermediateStack.addFirst(c);
+        }
+    }
+
+    public static void insertLoop() {
+        // .ALGO define que luego se deberia crear una etiqueta en assembler
+        insert(".LOOP_" + Loop.current);
+        loopStack.addFirst(new Loop());
+    }
+
+    public static void moveToLoop() {
+        Loop l = loopStack.peek();
+        if (l != null) {
+            Cell c = getStacked(temporaryStack);
+            while (c != null) {
+                l.cells.add(c);
+                c = getStacked(temporaryStack);
+            }
+        }
+    }
+
+    public static void endLoop() {
+        Loop l = getStacked(loopStack);
+        if (l != null) {
+            insert("LOOP_" + l.id);
+            for (Cell c : l.cells) {
+                c.value = String.valueOf(intermediateStack.size() + 1);
+            }
         }
     }
 
@@ -62,20 +102,18 @@ public class IntermediateCodeGenerator implements FileGenerator {
         stack_current();
     }
 
-    public static void update_to_one_more() {
-        Cell c = get_stacked_cell();
-
-        while (c != null) {
-            c.value = String.valueOf(intermediateStack.size() + 1);
-            c = get_stacked_cell();
+    public static void update_stacked_cell(int offset) {
+        Cell c = getStacked(temporaryStack);
+        if (c != null) {
+            c.value = String.valueOf(intermediateStack.size() + offset);
         }
     }
 
-    public static void update_to_current() {
-        Cell c = get_stacked_cell();
-
-        if (c != null) {
-            c.value = String.valueOf(intermediateStack.size());
+    public static void update_all_stacked_cell(int offset) {
+        Cell c = getStacked(temporaryStack);
+        while (c != null) {
+            c.value = String.valueOf(intermediateStack.size() + offset);
+            c = getStacked(temporaryStack);
         }
     }
 
@@ -99,15 +137,13 @@ public class IntermediateCodeGenerator implements FileGenerator {
         };
     }
 
-    private static Cell get_stacked_cell() {
-        Cell c;
-
+    private static <T extends Object> T getStacked(Deque<T> stack) {
+        T c;
         try {
-            c = temporaryStack.removeFirst();
+            c = stack.removeFirst();
         } catch (NoSuchElementException e) {
             c = null;
         }
-
         return c;
     }
 }

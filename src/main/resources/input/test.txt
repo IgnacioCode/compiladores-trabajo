@@ -4,7 +4,7 @@ vars {
 };
 
 #/ condicional if-else \#
-if (b > 0 or a == b) {
+if (b > 0 and a == b) {
     a = a * b + 1;
 } else {
     a = 25;
@@ -12,4 +12,12 @@ if (b > 0 or a == b) {
 
 c = b + a;
 
-vars { a, b, c : int; }
+
+while (a != 0 and b > 25) {
+    if (a < b or c > b) {
+        while (c != 0) {
+            a = c - b;
+        }
+    }
+    b = 2 * 3;
+}

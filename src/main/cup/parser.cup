@@ -116,22 +116,26 @@ sentencia ::= asignacion PUNTO_COMA
             ;
 asignacion ::= ID:id OP_ASIG expresion  {: IntermediateCodeGenerator.insert("=", id.toString()); :}
             ;
-iteracion ::= CICLO ABRE_PAR condicion CIERRA_PAR ABRE_LLAVE programa CIERRA_LLAVE {: :}
+iteracion ::= CICLO  {: IntermediateCodeGenerator.insertLoop(); :}  ABRE_PAR condicion  {: IntermediateCodeGenerator.moveToLoop(); :}  CIERRA_PAR ABRE_LLAVE programa CIERRA_LLAVE  {:
+                IntermediateCodeGenerator.insert("BI");
+                IntermediateCodeGenerator.endLoop();
+            :}
             ;
-seleccion ::= COND_IF ABRE_PAR condicion CIERRA_PAR ABRE_LLAVE programa CIERRA_LLAVE  {: IntermediateCodeGenerator.update_to_one_more(); :}
+seleccion ::= COND_IF ABRE_PAR condicion CIERRA_PAR ABRE_LLAVE programa CIERRA_LLAVE  {: IntermediateCodeGenerator.update_stacked_cell(1); :}
             | COND_IF ABRE_PAR condicion CIERRA_PAR ABRE_LLAVE programa CIERRA_LLAVE COND_ELSE  {:
                 IntermediateCodeGenerator.insert("BI");
                 IntermediateCodeGenerator.move();
-                IntermediateCodeGenerator.update_to_one_more();
+                IntermediateCodeGenerator.update_all_stacked_cell(1); // En caso de tener mas de una comparacion tipo and, actualizamos todas.
                 IntermediateCodeGenerator.stack_current();
-            :}  ABRE_LLAVE programa CIERRA_LLAVE {: IntermediateCodeGenerator.update_to_one_more(); :}
+            :}  ABRE_LLAVE programa CIERRA_LLAVE  {: IntermediateCodeGenerator.update_stacked_cell(1); :}
             ;
 condicion ::= condicion OP_OR  {: IntermediateCodeGenerator.invertCMP(); :}  conjuncion  {:
                 // Avanzamos una celda, actualizamos la celda de la primer comparacion con el inicio del bloque verdadero y apilamos la segunda comparacion. //
                 IntermediateCodeGenerator.move(); 
-                IntermediateCodeGenerator.update_to_one_more();
+                IntermediateCodeGenerator.update_stacked_cell(1);
                 IntermediateCodeGenerator.stack_current();
-            :}            // Apila la celda de la segunda comparacion del and (si es que hay uno) o la comparacion sola. //
+            :}
+                          // Apila la celda de la segunda comparacion del and (si es que hay uno) o la comparacion sola. //
             | conjuncion  {: IntermediateCodeGenerator.stack_and_move(); :}
             ;
                            // Apila la celda antes del and. //
@@ -139,7 +143,7 @@ conjuncion ::= conjuncion  {: IntermediateCodeGenerator.stack_and_move(); :}  OP
             |  termino_log
             ;
 termino_log ::= comparacion
-            |   OP_NOT termino_log {: IntermediateCodeGenerator.invertCMP(); :}
+            |   OP_NOT termino_log  {: IntermediateCodeGenerator.invertCMP(); :}
             |   ABRE_PAR condicion CIERRA_PAR
             ;
 comparacion ::= expresion comparador:cmp expresion  {: IntermediateCodeGenerator.insert("CMP", cmp); IntermediateCodeGenerator.saveLastCMP(); :}
@@ -151,7 +155,7 @@ comparador ::= COMP_EQ        {: RESULT = "BNE"; :}
             |  COMP_MAYOR_EQ  {: RESULT = "BLT"; :}
             |  COMP_MENOR_EQ  {: RESULT = "BGT"; :}
             ;
-expresion ::= expresion:expr OP_MAS termino:term    {:
+expresion ::= expresion:expr OP_MAS termino:term  {:
                 if (expr != null && term != null) {
                     if (expr == term) { IntermediateCodeGenerator.insert("+"); }
                     else { 
@@ -201,7 +205,7 @@ factor    ::= ID:id  {:
                 }
             :}
             | OP_MENOS ID:id  {:
-                if (SymbolHashTableGenerator.variableExists(id.toString())) { 
+                if (SymbolHashTableGenerator.variableExists(id.toString())) {
                     if (SymbolHashTableGenerator.variableType(id.toString()) != SymbolHashTableGenerator.VariableTypes.STRING) {
                         IntermediateCodeGenerator.insert('-' + id.toString());
                         RESULT = SymbolHashTableGenerator.variableType(id.toString());
@@ -214,8 +218,8 @@ factor    ::= ID:id  {:
                     errorCount++;
                 }
             :}
-            | constant:cte           {: IntermediateCodeGenerator.insert(cte);  RESULT = SymbolHashTableGenerator.variableType(cte); :}
-            | OP_MENOS constant:cte  {: 
+            | constant:cte  {: IntermediateCodeGenerator.insert(cte);  RESULT = SymbolHashTableGenerator.variableType(cte); :}
+            | OP_MENOS constant:cte  {:
                 if (SymbolHashTableGenerator.variableType(cte) != SymbolHashTableGenerator.VariableTypes.STRING) {
                     IntermediateCodeGenerator.insert('-' + cte);
                     RESULT = SymbolHashTableGenerator.variableType(cte);
@@ -247,15 +251,15 @@ args_lista ::= factor {: :}
             ;
 declaracion ::= INIC_VARS ABRE_LLAVE decl_lista CIERRA_LLAVE {: :}
             ;
-decl_lista ::= var_lista DOS_PUNTOS TIPO:type PUNTO_COMA {:
+decl_lista ::= var_lista DOS_PUNTOS TIPO:type PUNTO_COMA  {:
                     id_list.forEach(id -> SymbolHashTableGenerator.addVariable(id, type));
                     id_list = new ArrayList();
                 :}
-            |  decl_lista var_lista DOS_PUNTOS TIPO:type PUNTO_COMA {:
+            |  decl_lista var_lista DOS_PUNTOS TIPO:type PUNTO_COMA  {:
                     id_list.forEach(id -> SymbolHashTableGenerator.addVariable(id, type));
                     id_list = new ArrayList();
                 :}
             ;
-var_lista ::= ID:id {: id_list.add(id.toString()); :}
-            | var_lista COMA ID:id {: id_list.add(id.toString()); :}
+var_lista ::= ID:id  {: id_list.add(id.toString()); :}
+            | var_lista COMA ID:id  {: id_list.add(id.toString()); :}
             ;
