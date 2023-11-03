@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import lyc.compiler.model.*;
 import lyc.compiler.files.SymbolHashTableGenerator;
 import lyc.compiler.files.IntermediateCodeGenerator;
+import lyc.compiler.internals.Arguments;
+import lyc.compiler.internals.Functions;
 import lyc.compiler.errors.ErrorHandling;
 
 class Parser;
@@ -12,6 +14,7 @@ class Parser;
 parser code {:
     public int errorCount = 0;
     public boolean syntaxErrors;
+    // Lista con las variables a guardar en la tabla de simbolos.
     public ArrayList<String> id_list = new ArrayList();
 
     public void syntax_error(Symbol current_token) {
@@ -78,24 +81,28 @@ non terminal sentencia;
 non terminal asignacion;
 non terminal iteracion;
 non terminal seleccion;
+non terminal seleccion_else;
 non terminal condicion;
 non terminal conjuncion;
 non terminal termino_log;
 non terminal comparacion;
 non terminal argumentos;
-non terminal interna_call;
-non terminal interna_id;
+non terminal interna;
+non terminal interna_body;
 non terminal args_lista;
 non terminal declaracion;
 non terminal decl_lista;
 non terminal var_lista;
 
-non terminal String constant;
 non terminal String comparador;
 
-non terminal SymbolHashTableGenerator.VariableTypes expresion;
-non terminal SymbolHashTableGenerator.VariableTypes termino;
-non terminal SymbolHashTableGenerator.VariableTypes factor;
+non terminal SymbolHashTableGenerator.Symbol expresion;
+non terminal SymbolHashTableGenerator.Symbol termino;
+non terminal SymbolHashTableGenerator.Symbol factor;
+non terminal SymbolHashTableGenerator.Symbol constant;
+
+non terminal SymbolHashTableGenerator.VariableTypes interna_asig;
+non terminal SymbolHashTableGenerator.VariableTypes asignable;
 
 
 // -- Start Symbol -- //
@@ -103,163 +110,321 @@ start with asm;
 
 
 // -- Reglas -- //
-asm       ::= programa  {: RESULT = errorCount; :}
-            ;
-programa  ::= sentencia
-            | programa sentencia
-            ;
-sentencia ::= asignacion PUNTO_COMA
-            | declaracion PUNTO_COMA
-            | interna_call PUNTO_COMA
-            | iteracion
-            | seleccion
-            ;
-asignacion ::= ID:id OP_ASIG expresion  {: IntermediateCodeGenerator.insert("=", id.toString()); :}
-            ;
-iteracion ::= CICLO  {: IntermediateCodeGenerator.insertLoop(); :}  ABRE_PAR condicion  {: IntermediateCodeGenerator.moveToLoop(); :}  CIERRA_PAR ABRE_LLAVE programa CIERRA_LLAVE  {:
-                IntermediateCodeGenerator.insert("BI");
-                IntermediateCodeGenerator.endLoop();
-            :}
-            ;
-seleccion ::= COND_IF ABRE_PAR condicion CIERRA_PAR ABRE_LLAVE programa CIERRA_LLAVE  {: IntermediateCodeGenerator.update_stacked_cell(1); :}
-            | COND_IF ABRE_PAR condicion CIERRA_PAR ABRE_LLAVE programa CIERRA_LLAVE COND_ELSE  {:
-                IntermediateCodeGenerator.insert("BI");
-                IntermediateCodeGenerator.move();
-                IntermediateCodeGenerator.update_all_stacked_cell(1); // En caso de tener mas de una comparacion tipo and, actualizamos todas.
-                IntermediateCodeGenerator.stack_current();
-            :}  ABRE_LLAVE programa CIERRA_LLAVE  {: IntermediateCodeGenerator.update_stacked_cell(1); :}
-            ;
-condicion ::= condicion OP_OR  {: IntermediateCodeGenerator.invertCMP(); :}  conjuncion  {:
-                // Avanzamos una celda, actualizamos la celda de la primer comparacion con el inicio del bloque verdadero y apilamos la segunda comparacion. //
-                IntermediateCodeGenerator.move(); 
-                IntermediateCodeGenerator.update_stacked_cell(1);
-                IntermediateCodeGenerator.stack_current();
-            :}
-                          // Apila la celda de la segunda comparacion del and (si es que hay uno) o la comparacion sola. //
-            | conjuncion  {: IntermediateCodeGenerator.stack_and_move(); :}
-            ;
-                           // Apila la celda antes del and. //
-conjuncion ::= conjuncion  {: IntermediateCodeGenerator.stack_and_move(); :}  OP_AND termino_log
-            |  termino_log
-            ;
-termino_log ::= comparacion
-            |   OP_NOT termino_log  {: IntermediateCodeGenerator.invertCMP(); :}
-            |   ABRE_PAR condicion CIERRA_PAR
-            ;
-comparacion ::= expresion comparador:cmp expresion  {: IntermediateCodeGenerator.insert("CMP", cmp); IntermediateCodeGenerator.saveLastCMP(); :}
-            ;
-comparador ::= COMP_EQ        {: RESULT = "BNE"; :}
-            |  COMP_DIST      {: RESULT = "BEQ"; :}
-            |  COMP_MAYOR     {: RESULT = "BLE"; :}
-            |  COMP_MENOR     {: RESULT = "BGE"; :}
-            |  COMP_MAYOR_EQ  {: RESULT = "BLT"; :}
-            |  COMP_MENOR_EQ  {: RESULT = "BGT"; :}
-            ;
-expresion ::= expresion:expr OP_MAS termino:term  {:
-                if (expr != null && term != null) {
-                    if (expr == term) { IntermediateCodeGenerator.insert("+"); }
-                    else { 
-                        System.err.println(ErrorHandling.formatError("Semantic", "No se puede sumar un \"" + expr.name() + "\" con un \"" + term.name() + "\"."));
-                        errorCount++;
-                    }
-                }
-            :}
-            | expresion:expr OP_MENOS termino:term  {:
-                if (expr != null && term != null) {
-                    if (expr == term) { IntermediateCodeGenerator.insert("-"); }
-                    else { 
-                        System.err.println(ErrorHandling.formatError("Semantic", "No se puede restar un \"" + expr.name() + "\" con un \"" + term.name() + "\"."));
-                        errorCount++;
-                    }
-                }
-            :}
-            | termino:term  {: RESULT = term; :}
-            ;
-termino   ::= termino:term OP_MULT factor:fact  {:
-                if (term != null && fact != null) {
-                    if (term == fact) { IntermediateCodeGenerator.insert("*"); }
-                    else { 
-                        System.err.println(ErrorHandling.formatError("Semantic", "No se puede multiplicar un \"" + term.name() + "\" con un \"" + fact.name() + "\"."));
-                        errorCount++;
-                    }
-                }
-            :}
-            | termino:term OP_DIV factor:fact  {:
-                if (term != null && fact != null) {
-                    if (term == fact) { IntermediateCodeGenerator.insert("/"); } 
-                    else { 
-                        System.err.println(ErrorHandling.formatError("Semantic", "No se puede dividir un \"" + term.name() + "\" con un \"" + fact.name() + "\"."));
-                        errorCount++;
-                    }
-                }
-            :}
-            | factor:fact  {: RESULT = fact; :}
-            ;
-factor    ::= ID:id  {:
-                if (SymbolHashTableGenerator.variableExists(id.toString())) {
-                    IntermediateCodeGenerator.insert(id.toString());
-                    RESULT = SymbolHashTableGenerator.variableType(id.toString());
-                } else {
-                    System.err.println(ErrorHandling.formatError("Semantic", "Variable \"" + id.toString() + "\" no fue previamente declarada."));
-                    errorCount++;
-                }
-            :}
-            | OP_MENOS ID:id  {:
-                if (SymbolHashTableGenerator.variableExists(id.toString())) {
-                    if (SymbolHashTableGenerator.variableType(id.toString()) != SymbolHashTableGenerator.VariableTypes.STRING) {
-                        IntermediateCodeGenerator.insert('-' + id.toString());
-                        RESULT = SymbolHashTableGenerator.variableType(id.toString());
-                    } else {
-                        System.err.println(ErrorHandling.formatError("Semantic", "Variable \"" + id.toString() + "\" no puede ser negativa porque es de tipo \"string\"."));
-                        errorCount++;
-                    }
-                } else {
-                    System.err.println(ErrorHandling.formatError("Semantic", "Variable \"" + id.toString() + "\" no fue previamente declarada."));
-                    errorCount++;
-                }
-            :}
-            | constant:cte  {: IntermediateCodeGenerator.insert(cte);  RESULT = SymbolHashTableGenerator.variableType(cte); :}
-            | OP_MENOS constant:cte  {:
-                if (SymbolHashTableGenerator.variableType(cte) != SymbolHashTableGenerator.VariableTypes.STRING) {
-                    IntermediateCodeGenerator.insert('-' + cte);
-                    RESULT = SymbolHashTableGenerator.variableType(cte);
-                } else {
-                        System.err.println(ErrorHandling.formatError("Semantic", "Constante \"" + cte + "\" no puede ser negativa porque es de tipo \"string\"."));
-                        errorCount++;
-                }
-            :}
-            | ABRE_PAR expresion:expr CIERRA_PAR  {: RESULT = expr; :}
-            | interna_call
-            ;
-constant  ::= CTE_INT:cte     {: RESULT = cte.toString(); :}
-            | CTE_FLOAT:cte   {: RESULT = cte.toString(); :}
-            | CTE_STRING:cte  {: RESULT = cte.toString(); :}
-            ;
-interna_call ::= interna_id ABRE_PAR argumentos CIERRA_PAR {: :}
-            ;
-interna_id ::= MOSTRAR_PANTALLA {: :}
-            |  LEER_TECLADO {: :}
-            |  FUNC_INDICE {: :}
-            |  FUNC_CONCAT {: :}
-            ;
-argumentos ::= factor {: :}
-            |  argumentos COMA factor {: :}
-            |  argumentos COMA ABRE_LISTA args_lista CIERRA_LISTA {: :}
-            ;
-args_lista ::= factor {: :}
-            |  args_lista COMA factor {: :}
-            ;
-declaracion ::= INIC_VARS ABRE_LLAVE decl_lista CIERRA_LLAVE {: :}
-            ;
-decl_lista ::= var_lista DOS_PUNTOS TIPO:type PUNTO_COMA  {:
-                    id_list.forEach(id -> SymbolHashTableGenerator.addVariable(id, type));
-                    id_list = new ArrayList();
-                :}
-            |  decl_lista var_lista DOS_PUNTOS TIPO:type PUNTO_COMA  {:
-                    id_list.forEach(id -> SymbolHashTableGenerator.addVariable(id, type));
-                    id_list = new ArrayList();
-                :}
-            ;
-var_lista ::= ID:id  {: id_list.add(id.toString()); :}
-            | var_lista COMA ID:id  {: id_list.add(id.toString()); :}
-            ;
+asm             ::= programa    {: RESULT = errorCount; :}
+                  ;
+
+programa        ::= sentencia
+                  | programa sentencia
+                  ;
+
+sentencia       ::= declaracion PUNTO_COMA
+                  | asignacion PUNTO_COMA
+                  | interna PUNTO_COMA
+                  | iteracion
+                  | seleccion
+                  ;
+
+declaracion     ::= INIC_VARS ABRE_LLAVE decl_lista CIERRA_LLAVE
+                  ;
+
+decl_lista      ::= var_lista DOS_PUNTOS TIPO:type PUNTO_COMA
+                  {:
+                        id_list.forEach(id -> SymbolHashTableGenerator.addVariable(id, type));
+                        id_list = new ArrayList();
+                  :}
+                  |  decl_lista var_lista DOS_PUNTOS TIPO:type PUNTO_COMA
+                  {:
+                        id_list.forEach(id -> SymbolHashTableGenerator.addVariable(id, type));
+                        id_list = new ArrayList();
+                  :}
+                  ;
+
+var_lista       ::= ID:id                   {: id_list.add(id.toString()); :}
+                  | var_lista COMA ID:id    {: id_list.add(id.toString()); :}
+                  ;
+
+asignacion      ::= ID:id OP_ASIG asignable:type
+                  {:
+                        SymbolHashTableGenerator.Symbol sym = SymbolHashTableGenerator.getVariable(id.toString());
+                        if (sym != null && type != null) {
+                            if (sym.type == type) {
+                                IntermediateCodeGenerator.insert("=", sym.name);
+                            } else {
+                                System.err.println(ErrorHandling.formatError(
+                                    "Semantic",
+                                    "No se le puede asignar a una variable de tipo \"" + sym.type.name() + "\" un dato de tipo \"" + type.name() + "\".")
+                                );
+                                errorCount++;
+                            }
+                        } else {
+                            System.err.println(ErrorHandling.formatError(
+                                "Semantic",
+                                "Variable \"" + id.toString() + "\" no fue previamente declarada.")
+                            );
+                            errorCount++;
+                        }
+                  :}
+                  ;
+
+iteracion       ::= CICLO  {: IntermediateCodeGenerator.startJumps("LOOP"); :}
+                    ABRE_PAR condicion  {: IntermediateCodeGenerator.moveJumps(); :}
+                    CIERRA_PAR ABRE_LLAVE programa CIERRA_LLAVE  {: IntermediateCodeGenerator.endLoopJumps("LOOP"); :}
+                  ;
+
+seleccion       ::= COND_IF  {: IntermediateCodeGenerator.startJumps("IF"); :}
+                    ABRE_PAR condicion  {: IntermediateCodeGenerator.moveJumps(); :}
+                    CIERRA_PAR ABRE_LLAVE programa CIERRA_LLAVE seleccion_else
+                  ;
+
+/*
+    Esta regla esta para evitar el conflicto que el parser genera al querer 
+    asignar una accion semantica en el medio de dos reglas similares (if y if-else).
+*/
+seleccion_else  ::=  {: IntermediateCodeGenerator.endIfJumps(); :}
+                  | COND_ELSE  {: IntermediateCodeGenerator.endIfElseJumps(); :}
+                    ABRE_LLAVE programa CIERRA_LLAVE  {: IntermediateCodeGenerator.updateStacked(1); :}
+                  ;
+
+condicion       ::= condicion OP_OR  {: IntermediateCodeGenerator.invertCMP(); :}
+                    conjuncion
+                  {:
+                        /* 
+                            Avanzamos una celda, actualizamos la celda de la comparacion previa
+                            con el inicio del bloque verdadero y apilamos la segunda comparacion.
+                        */
+                        IntermediateCodeGenerator.move(); 
+                        IntermediateCodeGenerator.updateStacked(1);
+                        IntermediateCodeGenerator.stackCurrent();
+                  :}
+                  | conjuncion
+                  {:
+                        /*
+                            Apila la celda de la siguiente comparacion por and (si es que hay) 
+                            o una sola comparacion.
+                        */
+                        IntermediateCodeGenerator.moveAndStack();
+                  :}
+                  ;
+
+conjuncion      ::= conjuncion  {: /* Apila la primer comparacion. */ IntermediateCodeGenerator.moveAndStack(); :}
+                    OP_AND termino_log
+                  | termino_log
+                  ;
+
+termino_log     ::= comparacion
+                  | OP_NOT termino_log  {: IntermediateCodeGenerator.invertCMP(); :}
+                  | ABRE_PAR condicion CIERRA_PAR
+                  ;
+
+comparacion     ::= expresion comparador:cmp expresion
+                  {:
+                        IntermediateCodeGenerator.insert("CMP", cmp);
+                        /*
+                            Guardamos la comparacion en caso que haya que invertirla.
+                        */
+                        IntermediateCodeGenerator.saveLastCMP();
+                  :}
+                  ;
+
+comparador      ::= COMP_EQ        {: RESULT = "BNE"; :}
+                  | COMP_DIST      {: RESULT = "BEQ"; :}
+                  | COMP_MAYOR     {: RESULT = "BLE"; :}
+                  | COMP_MENOR     {: RESULT = "BGE"; :}
+                  | COMP_MAYOR_EQ  {: RESULT = "BLT"; :}
+                  | COMP_MENOR_EQ  {: RESULT = "BGT"; :}
+                  ;
+
+expresion       ::= expresion:expr OP_MAS termino:term
+                  {:
+                        if (expr != null && term != null) {
+                            if (expr.type == term.type) {
+                                IntermediateCodeGenerator.insert("+");
+                            }
+                            else {
+                                System.err.println(ErrorHandling.formatError(
+                                    "Semantic",
+                                    "No se puede sumar un \"" + expr.type.name() + "\" con un \"" + term.type.name() + "\".")
+                                );
+                                errorCount++;
+                            }
+                            RESULT = term;
+                        }
+                  :}
+                  | expresion:expr OP_MENOS termino:term
+                  {:
+                        if (expr != null && term != null) {
+                            if (expr.type == term.type) {
+                                IntermediateCodeGenerator.insert("-");
+                            }
+                            else {
+                                System.err.println(ErrorHandling.formatError(
+                                    "Semantic",
+                                    "No se puede restar un \"" + expr.type.name() + "\" con un \"" + term.type.name() + "\".")
+                                );
+                                errorCount++;
+                            }
+                            RESULT = term;
+                        }
+                  :}
+                  | termino:term  {: RESULT = term; :}
+                  ;
+
+termino         ::= termino:term OP_MULT factor:fact
+                  {:
+                        if (term != null && fact != null) {
+                            if (term.type == fact.type) {
+                                IntermediateCodeGenerator.insert("*");
+                            }
+                            else { 
+                                System.err.println(ErrorHandling.formatError(
+                                    "Semantic",
+                                    "No se puede multiplicar un \"" + term.type.name() + "\" con un \"" + fact.type.name() + "\".")
+                                );
+                                errorCount++;
+                            }
+                            RESULT = fact;
+                        }
+                  :}
+                  | termino:term OP_DIV factor:fact
+                  {:
+                        if (term != null && fact != null) {
+                            if (term.type == fact.type) {
+                                IntermediateCodeGenerator.insert("/");
+                            }
+                            else {
+                                System.err.println(ErrorHandling.formatError(
+                                    "Semantic",
+                                    "No se puede dividir un \"" + term.type.name() + "\" con un \"" + fact.type.name() + "\".")
+                                );
+                                errorCount++;
+                            }
+                            RESULT = fact;
+                        }
+                  :}
+                  | factor:fact  {: RESULT = fact; :}
+                  ;
+
+factor          ::= ID:id
+                  {:
+                        SymbolHashTableGenerator.Symbol sym = SymbolHashTableGenerator.getVariable(id.toString());
+                        if (sym != null) {
+                            IntermediateCodeGenerator.insert(sym.name);
+                            RESULT = sym;
+                        } else {
+                            System.err.println(ErrorHandling.formatError(
+                                "Semantic",
+                                "Variable \"" + id.toString() + "\" no fue previamente declarada.")
+                            );
+                            errorCount++;
+                        }
+                  :}
+                  | OP_MENOS ID:id
+                  {:
+                        SymbolHashTableGenerator.Symbol sym = SymbolHashTableGenerator.getVariable(id.toString());
+                        if (sym != null) {
+                            if (sym.type != SymbolHashTableGenerator.VariableTypes.STRING) {
+                                IntermediateCodeGenerator.insert('-' + sym.name);
+                            } else {
+                                System.err.println(ErrorHandling.formatError(
+                                    "Semantic",
+                                    "Variable \"" + sym.name + "\" no puede ser negativa porque es de tipo \"string\".")
+                                );
+                                errorCount++;
+                            }
+                            RESULT = sym;
+                        } else {
+                            System.err.println(ErrorHandling.formatError(
+                                "Semantic",
+                                "Variable \"" + id.toString() + "\" no fue previamente declarada.")
+                            );
+                            errorCount++;
+                        }
+                  :}
+                  | constant:cte
+                  {:
+                        /*
+                            No chequeamos si es null porque si llego hasta aca
+                            entonces ya esta dentro de la tabla de simbolos.
+                        */
+                        IntermediateCodeGenerator.insert(cte.name);
+                        RESULT = cte;
+                  :}
+                  | OP_MENOS constant:cte
+                  {:
+                        if (cte.type != SymbolHashTableGenerator.VariableTypes.STRING) {
+                            IntermediateCodeGenerator.insert('-' + cte.name);
+                        } else {
+                            System.err.println(ErrorHandling.formatError(
+                                "Semantic",
+                                "Constante \"" + cte.value + "\" no puede ser negativa porque es de tipo \"string\".")
+                            );
+                            errorCount++;
+                        }
+                        RESULT = cte;
+                  :}
+                  | ABRE_PAR expresion:expr CIERRA_PAR  {: RESULT = expr; :}
+                  ;
+
+constant        ::= CTE_INT:cte     {: RESULT = SymbolHashTableGenerator.getVariable(cte.toString()); :}
+                  | CTE_FLOAT:cte   {: RESULT = SymbolHashTableGenerator.getVariable(cte.toString()); :}
+                  | CTE_STRING:cte  {: RESULT = SymbolHashTableGenerator.getVariable(cte.toString()); :}
+                  ;
+
+interna_asig    ::= FUNC_INDICE interna_body
+                  {:
+                        if (Functions.indexValidate()) {
+                            Functions.findIndex();
+                        } else {
+                            System.err.println(ErrorHandling.formatError(
+                                "Semantic",
+                                "Mal uso de la funcion \"FirstIndexOf\".")
+                            );
+                            errorCount++;
+                        }
+                        RESULT = SymbolHashTableGenerator.VariableTypes.INT;
+                   :}
+                   | FUNC_CONCAT interna_body
+                   {:
+                        if (Functions.concatValidate()) {
+                            Functions.concatCut();
+                        } else {
+                            System.err.println(ErrorHandling.formatError(
+                                "Semantic",
+                                "Mal uso de la funcion \"ConcatenarConRecorte\".")
+                            );
+                            errorCount++;
+                        }
+                        RESULT = SymbolHashTableGenerator.VariableTypes.STRING;
+                   :}
+                   ;
+
+interna         ::= MOSTRAR_PANTALLA interna_body  {: Functions.write(); :}
+                  | LEER_TECLADO interna_body
+                  {:
+                        if (Functions.readValidate()) {
+                            Functions.read();
+                        } else {
+                            System.err.println(ErrorHandling.formatError(
+                                "Semantic",
+                                "Mal uso de la funcion \"read\".")
+                            );
+                            errorCount++;
+                        }
+                  :}
+                  ;
+
+interna_body    ::= ABRE_PAR argumentos CIERRA_PAR
+                  ;
+
+argumentos      ::= expresion:expr  {: if (expr != null) Arguments.add(expr); :}
+                  | argumentos COMA expresion:expr  {: if (expr != null) Arguments.add(expr); :}
+                  | argumentos COMA ABRE_LISTA args_lista CIERRA_LISTA
+                  ;
+
+args_lista      ::= expresion:expr  {: if (expr != null) Arguments.addList(expr); :}
+                  | args_lista COMA expresion:expr  {: if (expr != null) Arguments.addList(expr); :}
+                  ;
+
+asignable       ::= expresion:expr      {: RESULT = (expr != null)? expr.type : null; :}
+                  | interna_asig:iasig  {: RESULT = iasig; :}
+                  ;

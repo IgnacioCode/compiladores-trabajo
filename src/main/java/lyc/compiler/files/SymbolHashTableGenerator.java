@@ -16,13 +16,13 @@ public class SymbolHashTableGenerator implements FileGenerator {
 		INT, FLOAT, STRING
 	}
 
-	private static class Symbol {
-		int length;
-		String name;
-		String value;
-		VariableTypes type;
+	public static class Symbol {
+		public int length;
+		public String name;
+		public String value;
+		public VariableTypes type;
 
-		Symbol(String name, VariableTypes type) {
+		public Symbol(String name, VariableTypes type) {
 			this.name = name;
 			this.type = type;
 		}
@@ -121,6 +121,10 @@ public class SymbolHashTableGenerator implements FileGenerator {
 		return symbolTable.containsKey(name);
 	}
 
+	public static Symbol getVariable(String name) {
+		return symbolTable.get(name);
+	}
+
 	public static VariableTypes castType(String type) throws InvalidTypeException {
 		return switch (type) {
 			case "int" -> VariableTypes.INT;
@@ -128,11 +132,6 @@ public class SymbolHashTableGenerator implements FileGenerator {
 			case "string" -> VariableTypes.STRING;
 			default -> throw new InvalidTypeException("Tipo de dato no reconocido.");
 		};
-	}
-
-	public static VariableTypes variableType(String name) {
-		Symbol sym = symbolTable.get(name);
-		return (sym == null) ? null : sym.type;
 	}
 
 	private static void _addVariable(String name, VariableTypes type) throws VariablePreviouslyDefined {
@@ -155,4 +154,5 @@ public class SymbolHashTableGenerator implements FileGenerator {
 
 		return longest_var;
 	}
+
 }

@@ -1,23 +1,83 @@
+#/ Definicion de variables \#
 vars {
     a, b, c : int;
     str : string;
 };
 
-#/ condicional if-else \#
+
+#/ Condicional if-else \#
 if (b > 0 and a == b) {
     a = a * b + 1;
 } else {
     a = 25;
 }
 
+
+#/ Asignaciones \#
 c = b + a;
 
 
+#/ Iteraciones anidadas con condicionales \#
 while (a != 0 and b > 25) {
     if (a < b or c > b) {
         while (c != 0) {
             a = c - b;
         }
+
+        c = 5 + 5;
     }
     b = 2 * 3;
 }
+
+
+#/ Built-in funciones \#
+a = FirstIndexOf((b-1), [1,b,2,-5]);
+
+read(str);
+
+write("Esta string: ", str, " es distinta a este numero: ", a);
+
+str = ConcatenarConRecorte("Hola", "Mundo", 2);
+
+
+#/ Condicional if anidados \#
+if (b > 0 or a == b) {
+    if (not b < a) {
+        b = 1 + b;
+    }
+    a = a * b + 1;
+}
+
+
+#/ -- Errores Lexicos -- \#
+#/ String literal supera el tamaño maximo. \#
+// str2 = "RVg1ceT8I42ttpmcg1WmcBPFW4ZevF X2fGdRgKuQc2OulDrkoY2E3Xe8BiAV";
+
+#/ Longitud del identificador supera el tamaño maximo. \#
+// p0jZaE1xBYfLzkNjfHoLV5StAkOzb9o2dWMEZ2qt3XxZ = 1;
+
+#/ Supera el valor maximo de un numero int. \#
+// MAX = 123456879;
+
+#/ Compilation error: Supera el valor maximo de un numero float. \#
+// a = 12345.123456789;
+
+#/ Caracter Desconocido \#
+// ?
+
+
+#/ -- Errores Semanticos -- \#
+#/ Variable previamente definida \#
+// vars { a : int; };
+
+#/ Variable no definida \#
+// k = 1 + 0;
+
+#/ Asignacion con distinto tipos \#
+// str = 1 + 0;
+
+#/ Operacion con tipos distintos \#
+// a = "Hola" / 3.0;
+
+#/ Mal uso de una funcion \#
+// a = FirstIndexOf("mundo", [1,b,2,-5]);

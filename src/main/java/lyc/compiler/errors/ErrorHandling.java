@@ -2,9 +2,6 @@ package lyc.compiler.errors;
 
 public final class ErrorHandling {
 
-    private ErrorHandling() {
-    }
-
     public static boolean validateInt(String value) {
         try {
             Short.valueOf(value);

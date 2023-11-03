@@ -112,28 +112,40 @@ Float =  \.{Digito}+ | {Digito}+\.{Digito}*
                                   if (yylength() <= STRING_MAX_LENGTH) {
                                     return symbol(ParserSym.ID, yytext());
                                   } else {
-                                    throw new InvalidLengthException(formatError("Lexical" , "Longitud del identificador \"" + yytext() + "\" supera el tamaño maximo permitido"));
+                                    throw new InvalidLengthException(formatError(
+                                      "Lexical",
+                                      "Longitud del identificador \"" + yytext() + "\" supera el tamaño maximo permitido")
+                                    );
                                   }
                                 }
   {Integer}                     { 
                                   if (validateInt(yytext())) {
                                     return symbol(ParserSym.CTE_INT, yytext());
                                   } else {
-                                    throw new InvalidIntegerException(formatError("Lexical", "El valor \"" + yytext() + "\" supera el numero maximo permitido para un entero"));
+                                    throw new InvalidIntegerException(formatError(
+                                      "Lexical",
+                                      "El valor \"" + yytext() + "\" supera el numero maximo permitido para un entero")
+                                    );
                                   }
                                 }
   {Float}                       { 
                                   if (validateFloat(yytext())) {
                                     return symbol(ParserSym.CTE_FLOAT, yytext());
                                   } else {
-                                    throw new InvalidFloatException(formatError("Lexical", "El valor \"" + yytext() + "\" supera el numero maximo permitido para un flotante"));
+                                    throw new InvalidFloatException(formatError(
+                                      "Lexical",
+                                      "El valor \"" + yytext() + "\" supera el numero maximo permitido para un flotante")
+                                    );
                                   }
                                 }
   {String}                      { 
                                   if (yylength() <= STRING_MAX_LENGTH) {
                                     return symbol(ParserSym.CTE_STRING, yytext());
                                   } else {
-                                    throw new InvalidLengthException(formatError("Lexical", "La cadena \"" + yytext() + "\" supera la longitud maxima permitida para una string"));
+                                    throw new InvalidLengthException(formatError(
+                                      "Lexical",
+                                      "La cadena \"" + yytext() + "\" supera la longitud maxima permitida para una string")
+                                    );
                                   }
                                 }
 
@@ -141,4 +153,7 @@ Float =  \.{Digito}+ | {Digito}+\.{Digito}*
 }
 
 /* error fallback */
-[^]                             { throw new UnknownCharacterException(yytext()); }
+[^]                             { throw new UnknownCharacterException(formatError(
+                                    "Lexical",
+                                    "Caracter desconocido: \"" + yytext() + "\"")
+                                  ); }

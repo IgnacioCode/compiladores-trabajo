@@ -12,9 +12,14 @@ public class IntermediateCodeGenerator implements FileGenerator {
 
     // Podemos utilizarla como lifo para escribir el codigo intermido y como una
     // fifo para escribir el assembler.
-    public static Deque<Cell> intermediateStack = new ArrayDeque<Cell>(512);
-    public static Deque<Cell> temporaryStack = new ArrayDeque<Cell>();
-    public static Deque<Loop> loopStack = new ArrayDeque<Loop>();
+    private static Deque<Cell> intermediateStack = new ArrayDeque<Cell>(512);
+    // Stack temporal para guardar saltos no asignados.
+    private static Deque<Cell> temporaryStack = new ArrayDeque<Cell>();
+    // Stack donde se guardan todos los saltos asignados a una seleccion o
+    // iteracion.
+    private static Deque<Jump> jumpsStack = new ArrayDeque<Jump>();
+    // Ultimo comparador utilizado, lo guardamos en caso de tener que invertirlo por
+    // una negacion.
     private static Cell lastCMP = null;
 
     private static class Cell {
@@ -31,13 +36,15 @@ public class IntermediateCodeGenerator implements FileGenerator {
         }
     }
 
-    private static class Loop {
+    private static class Jump {
         int id;
+        int jump_id; // Numero de celda donde comienza las condiciones.
         ArrayList<Cell> cells;
         static int current = 0;
 
-        Loop() {
+        Jump(int jump_id) {
             this.id = current++;
+            this.jump_id = jump_id;
             this.cells = new ArrayList<Cell>();
         }
     }
@@ -58,31 +65,56 @@ public class IntermediateCodeGenerator implements FileGenerator {
         }
     }
 
-    public static void insertLoop() {
-        // .ALGO define que luego se deberia crear una etiqueta en assembler
-        insert(".LOOP_" + Loop.current);
-        loopStack.addFirst(new Loop());
+    public static void startJumps(String name) {
+        // .ALGO define que luego se deberia crear una etiqueta en assembly (aunque se
+        // puede ignorar la del .IF).
+        insert("." + name.toUpperCase() + "_" + Jump.current);
+        jumpsStack.addFirst(new Jump(intermediateStack.size()));
     }
 
-    public static void moveToLoop() {
-        Loop l = loopStack.peek();
+    public static void moveJumps() {
+        Jump l = jumpsStack.peek();
         if (l != null) {
-            Cell c = getStacked(temporaryStack);
-            while (c != null) {
+            Cell c = temporaryStack.peek();
+            // Mientras el condicional en el stack sea mas nuevo que el inicio del jump...
+            while (c != null && c.id > l.jump_id) {
                 l.cells.add(c);
-                c = getStacked(temporaryStack);
+                temporaryStack.remove();
+                c = temporaryStack.peek();
             }
         }
     }
 
-    public static void endLoop() {
-        Loop l = getStacked(loopStack);
+    public static void endLoopJumps(String name) {
+        insert("BI");
+        Jump l = getStacked(jumpsStack);
         if (l != null) {
-            insert("LOOP_" + l.id);
+            insert(name.toUpperCase() + "_" + l.id);
             for (Cell c : l.cells) {
                 c.value = String.valueOf(intermediateStack.size() + 1);
             }
         }
+    }
+
+    public static void endIfJumps() {
+        Jump l = getStacked(jumpsStack);
+        if (l != null) {
+            for (Cell c : l.cells) {
+                c.value = String.valueOf(intermediateStack.size() + 1);
+            }
+        }
+    }
+
+    public static void endIfElseJumps() {
+        insert("BI");
+        move();
+        Jump l = getStacked(jumpsStack);
+        if (l != null) {
+            for (Cell c : l.cells) {
+                c.value = String.valueOf(intermediateStack.size() + 1);
+            }
+        }
+        stackCurrent();
     }
 
     public static void move() {
@@ -90,31 +122,31 @@ public class IntermediateCodeGenerator implements FileGenerator {
         intermediateStack.addFirst(c);
     }
 
-    public static void stack_current() {
+    public static void stackCurrent() {
         Cell c = intermediateStack.peek();
         if (c != null) {
             temporaryStack.addFirst(c);
         }
     }
 
-    public static void stack_and_move() {
+    public static void moveAndStack() {
         move();
-        stack_current();
+        stackCurrent();
     }
 
-    public static void update_stacked_cell(int offset) {
+    public static void unstack() {
+        intermediateStack.remove();
+    }
+
+    public static void updateStacked(int offset) {
         Cell c = getStacked(temporaryStack);
         if (c != null) {
             c.value = String.valueOf(intermediateStack.size() + offset);
         }
     }
 
-    public static void update_all_stacked_cell(int offset) {
-        Cell c = getStacked(temporaryStack);
-        while (c != null) {
-            c.value = String.valueOf(intermediateStack.size() + offset);
-            c = getStacked(temporaryStack);
-        }
+    public static int getCurrentID() {
+        return intermediateStack.peek().id;
     }
 
     public static void saveLastCMP() {
@@ -146,4 +178,5 @@ public class IntermediateCodeGenerator implements FileGenerator {
         }
         return c;
     }
+
 }
