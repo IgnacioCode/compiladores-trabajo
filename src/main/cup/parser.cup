@@ -2,39 +2,49 @@ package lyc.compiler;
 
 import java_cup.runtime.*;
 import java.util.ArrayList;
-import lyc.compiler.files.SymbolTableGenerator;
+import lyc.compiler.model.*;
+import lyc.compiler.files.SymbolHashTableGenerator;
+import lyc.compiler.files.IntermediateCodeGenerator;
+import lyc.compiler.internals.Arguments;
+import lyc.compiler.internals.Functions;
+import lyc.compiler.errors.ErrorHandling;
 
 class Parser;
 
 parser code {:
+    public int errorCount = 0;
     public boolean syntaxErrors;
+    // Lista con las variables a guardar en la tabla de simbolos.
     public ArrayList<String> id_list = new ArrayList();
 
     public void syntax_error(Symbol current_token) {
         report_error(
-            "Syntax error at line " + (current_token.left + 1) + 
-            ", column " + current_token.right + "\n", null
+            ErrorHandling.formatError(
+                "Syntax",
+                "at line " + (current_token.left + 1) + ", column " + current_token.right + "\n"
+            ), null
         );
-    }
-
-    private void print(String str) {
-        System.out.println("Regla: " + str);
     }
 :};
 
-// terminales
-terminal CTE;
-terminal ID;
-terminal STRING_LITERAL;
 
-terminal OP_ASIG;
-terminal OP_MAS;
+// -- Terminales -- //
+terminal SymbolHashTableGenerator.VariableTypes TIPO;
+
+terminal ID;
+terminal CTE_INT;
+terminal CTE_FLOAT;
+terminal CTE_STRING;
+
 terminal OP_MENOS;
+terminal OP_MAS;
 terminal OP_MULT;
 terminal OP_DIV;
-terminal OP_AND;
-terminal OP_OR;
-terminal OP_NOT;
+terminal OP_ASIG;
+
+terminal COMA;
+terminal DOS_PUNTOS;
+terminal PUNTO_COMA;
 
 terminal COMP_EQ;
 terminal COMP_DIST;
@@ -50,133 +60,371 @@ terminal CIERRA_PAR;
 terminal ABRE_LISTA;
 terminal CIERRA_LISTA;
 
+terminal OP_AND;
+terminal OP_OR;
+terminal OP_NOT;
 terminal COND_IF;
 terminal COND_ELSE;
 terminal CICLO;
-
-terminal TD_INT;
-terminal TD_FLOAT;
-terminal TD_STRING;
-
 terminal INIC_VARS;
-terminal COMA;
-terminal DOS_PUNTOS;
-terminal PUNTO_COMA;
 
 terminal LEER_TECLADO;
 terminal MOSTRAR_PANTALLA;
 terminal FUNC_INDICE;
 terminal FUNC_CONCAT;
 
-// Non terminales
+
+// -- No Terminales -- //
+non terminal asm;
 non terminal programa;
 non terminal sentencia;
 non terminal asignacion;
 non terminal iteracion;
 non terminal seleccion;
-non terminal expresion;
+non terminal seleccion_else;
 non terminal condicion;
+non terminal conjuncion;
 non terminal termino_log;
-non terminal factor_log;
 non terminal comparacion;
-non terminal comparador;
 non terminal argumentos;
-non terminal termino;
-non terminal factor;
-non terminal fn_llamado;
-non terminal fn_nombre;
+non terminal interna;
+non terminal interna_body;
+non terminal args_lista;
 non terminal declaracion;
-non terminal declaracion_lista;
+non terminal decl_lista;
 non terminal var_lista;
-non terminal var_tipo;
-non terminal lista;
-non terminal lista_rec;
 
-// Start Symbol Definition
-start with programa;
+non terminal String comparador;
 
-programa ::= sentencia {: print("programa ::= sentencia"); :};
-programa ::= programa sentencia {: print("programa ::= programa sentencia"); :};
+non terminal SymbolHashTableGenerator.Symbol expresion;
+non terminal SymbolHashTableGenerator.Symbol termino;
+non terminal SymbolHashTableGenerator.Symbol factor;
+non terminal SymbolHashTableGenerator.Symbol constant;
 
-sentencia ::= asignacion PUNTO_COMA {: print("sentencia ::= asignacion;"); :};
-sentencia ::= fn_llamado PUNTO_COMA {: print("sentencia ::= fn_llamado;"); :};
-sentencia ::= declaracion PUNTO_COMA {: print("sentencia ::= declaracion;"); :};
-sentencia ::= iteracion {: print("sentencia ::= iteracion"); :};
-sentencia ::= seleccion {: print("sentencia ::= seleccion"); :};
+non terminal SymbolHashTableGenerator.VariableTypes interna_asig;
+non terminal SymbolHashTableGenerator.VariableTypes asignable;
 
-asignacion ::= ID OP_ASIG expresion {: print("asignacion ::= id = expresion"); :};
 
-iteracion ::= CICLO ABRE_PAR condicion CIERRA_PAR ABRE_LLAVE programa CIERRA_LLAVE {: print("iteracion ::= while(expresion) { programa }"); :};
+// -- Start Symbol -- //
+start with asm;
 
-seleccion ::= COND_IF ABRE_PAR condicion CIERRA_PAR ABRE_LLAVE programa CIERRA_LLAVE {: print("seleccion ::= if(expresion) { programa }"); :};
-seleccion ::= COND_IF ABRE_PAR condicion CIERRA_PAR ABRE_LLAVE programa CIERRA_LLAVE COND_ELSE ABRE_LLAVE programa CIERRA_LLAVE {: print("seleccion ::= if(expresion) { programa } else { programa }"); :};
 
-condicion ::= condicion OP_OR termino_log {: print("condicion ::= condicion or termino_log"); :}
-            | termino_log {: print("condicion ::= termino_log"); :}
-            | condicion OP_OR ID {: print("condicion ::= condicion or ID"); :}
-            | ID OP_OR termino_log {: print("condicion ::= ID or termino_log"); :}
-            | ID OP_OR ID {: print("condicion ::= ID or ID"); :};
+// -- Reglas -- //
+asm             ::= programa    {: RESULT = errorCount; :}
+                  ;
 
-termino_log ::= termino_log OP_AND factor_log {: print("termino_log ::= condicion or factor_log"); :}
-            | factor_log {: print("termino_log ::= factor_log"); :}
-            | termino_log OP_AND ID {: print("termino_log ::= condicion and ID"); :}
-            | ID OP_AND factor_log {: print("termino_log ::= ID and factor_log"); :}
-            | ID OP_AND ID {: print("termino_log ::= ID and ID"); :};
+programa        ::= sentencia
+                  | programa sentencia
+                  ;
 
-factor_log ::= comparacion {: print("factor_log ::= comparacion"); :}
-            | ABRE_PAR condicion CIERRA_PAR {: print("factor_log ::= (condicion)"); :}
-            | OP_NOT ID {: print("factor_log ::= not ID"); :}
-            | OP_NOT comparacion {: print("factor_log ::= not comparacion"); :}
-            | OP_NOT ABRE_PAR condicion CIERRA_PAR {: print("factor_log ::= not (condicion)"); :};
+sentencia       ::= declaracion PUNTO_COMA
+                  | asignacion PUNTO_COMA
+                  | interna PUNTO_COMA
+                  | iteracion
+                  | seleccion
+                  ;
 
-comparacion ::= expresion comparador expresion {: print("comparacion ::= expresion comparador expresion"); :};
+declaracion     ::= INIC_VARS ABRE_LLAVE decl_lista CIERRA_LLAVE
+                  ;
 
-comparador ::= COMP_EQ  {: print("comparador ::= COMP_EQ"); :}
-             | COMP_DIST  {: print("comparador ::= COMP_DIST"); :}
-             | COMP_MAYOR  {: print("comparador ::= COMP_MAYOR"); :}
-             | COMP_MENOR  {: print("comparador ::= COMP_MENOR"); :}
-             | COMP_MAYOR_EQ  {: print("comparador ::= COMP_MAYOR_EQ"); :}
-             | COMP_MENOR_EQ  {: print("comparador ::= COMP_MENOR_EQ"); :};
+decl_lista      ::= var_lista DOS_PUNTOS TIPO:type PUNTO_COMA
+                  {:
+                        id_list.forEach(id -> SymbolHashTableGenerator.addVariable(id, type));
+                        id_list = new ArrayList();
+                  :}
+                  |  decl_lista var_lista DOS_PUNTOS TIPO:type PUNTO_COMA
+                  {:
+                        id_list.forEach(id -> SymbolHashTableGenerator.addVariable(id, type));
+                        id_list = new ArrayList();
+                  :}
+                  ;
 
-expresion ::= expresion OP_MAS termino {: print("expresion ::= expresion + termino"); :};
-expresion ::= expresion OP_MENOS termino {: print("expresion ::= expresion - termino"); :};
-expresion ::= termino {: print("expresion ::= termino"); :};
+var_lista       ::= ID:id                   {: id_list.add(id.toString()); :}
+                  | var_lista COMA ID:id    {: id_list.add(id.toString()); :}
+                  ;
 
-termino ::= termino OP_MULT factor {: print("termino ::= termino * factor"); :};
-termino ::= termino OP_DIV factor {: print("termino ::= termino / factor"); :};
-termino ::= factor {: print("termino ::= factor"); :};
+asignacion      ::= ID:id OP_ASIG asignable:type
+                  {:
+                        SymbolHashTableGenerator.Symbol sym = SymbolHashTableGenerator.getVariable(id.toString());
+                        if (sym != null && type != null) {
+                            if (sym.type == type) {
+                                IntermediateCodeGenerator.insert("=", sym.name);
+                            } else {
+                                System.err.println(ErrorHandling.formatError(
+                                    "Semantic",
+                                    "No se le puede asignar a una variable de tipo \"" + sym.type.name() + "\" un dato de tipo \"" + type.name() + "\".")
+                                );
+                                errorCount++;
+                            }
+                        } else {
+                            System.err.println(ErrorHandling.formatError(
+                                "Semantic",
+                                "Variable \"" + id.toString() + "\" no fue previamente declarada.")
+                            );
+                            errorCount++;
+                        }
+                  :}
+                  ;
 
-factor ::= ID {: print("factor ::= ID"); :}
-         | OP_MENOS ID {: print("factor ::= -ID"); :};
-factor ::= CTE {: print("factor ::= CTE"); :}
-         | OP_MENOS CTE {: print("factor ::= -CTE"); :};
-factor ::= fn_llamado {: print("factor ::= fn_llamado"); :};
-factor ::= STRING_LITERAL {: print("factor ::= STRING_LITERAL"); :};
-factor ::= ABRE_PAR expresion CIERRA_PAR {: print("factor ::= (expresion)"); :};
+iteracion       ::= CICLO  {: IntermediateCodeGenerator.startJumps("LOOP"); :}
+                    ABRE_PAR condicion  {: IntermediateCodeGenerator.moveJumps(); :}
+                    CIERRA_PAR ABRE_LLAVE programa CIERRA_LLAVE  {: IntermediateCodeGenerator.endLoopJumps("LOOP"); :}
+                  ;
 
-fn_llamado ::= fn_nombre ABRE_PAR argumentos CIERRA_PAR {: print("fn_llamado ::= fn_nombre(argumentos)"); :};
+seleccion       ::= COND_IF  {: IntermediateCodeGenerator.startJumps("IF"); :}
+                    ABRE_PAR condicion  {: IntermediateCodeGenerator.moveJumps(); :}
+                    CIERRA_PAR ABRE_LLAVE programa CIERRA_LLAVE seleccion_else
+                  ;
 
-fn_nombre ::= MOSTRAR_PANTALLA {: print("fn_nombre ::= MOSTRAR_PANTALLA"); :}
-            | LEER_TECLADO {: print("fn_nombre ::= LEER_TECLADO"); :}
-            | FUNC_INDICE {: print("fn_nombre ::= FUNC_INDICE"); :}
-            | FUNC_CONCAT {: print("fn_nombre ::= FUNC_CONCAT"); :};
+/*
+    Esta regla esta para evitar el conflicto que el parser genera al querer 
+    asignar una accion semantica en el medio de dos reglas similares (if y if-else).
+*/
+seleccion_else  ::=  {: IntermediateCodeGenerator.endIfJumps(); :}
+                  | COND_ELSE  {: IntermediateCodeGenerator.endIfElseJumps(); :}
+                    ABRE_LLAVE programa CIERRA_LLAVE  {: IntermediateCodeGenerator.updateStacked(1); :}
+                  ;
 
-argumentos ::= factor {: print("argumentos ::= factor"); :};
-argumentos ::= argumentos COMA factor {: print("argumentos ::= factor, factor, ..."); :};
-argumentos ::= argumentos COMA lista {: print("argumentos ::= ..., [id, id, ...]"); :};
+condicion       ::= condicion OP_OR  {: IntermediateCodeGenerator.invertCMP(); :}
+                    conjuncion
+                  {:
+                        /* 
+                            Avanzamos una celda, actualizamos la celda de la comparacion previa
+                            con el inicio del bloque verdadero y apilamos la segunda comparacion.
+                        */
+                        IntermediateCodeGenerator.move(); 
+                        IntermediateCodeGenerator.updateStacked(1);
+                        IntermediateCodeGenerator.stackCurrent();
+                  :}
+                  | conjuncion
+                  {:
+                        /*
+                            Apila la celda de la siguiente comparacion por and (si es que hay) 
+                            o una sola comparacion.
+                        */
+                        IntermediateCodeGenerator.moveAndStack();
+                  :}
+                  ;
 
-declaracion ::= INIC_VARS ABRE_LLAVE declaracion_lista CIERRA_LLAVE {: print("declaracion ::= vars { declaracion_lista };"); :};
+conjuncion      ::= conjuncion  {: /* Apila la primer comparacion. */ IntermediateCodeGenerator.moveAndStack(); :}
+                    OP_AND termino_log
+                  | termino_log
+                  ;
 
-declaracion_lista ::= var_lista DOS_PUNTOS var_tipo PUNTO_COMA {: print("declaracion_lista ::= id, id, ... : var_tipo; --> "); :};
-declaracion_lista ::= declaracion_lista var_lista DOS_PUNTOS var_tipo PUNTO_COMA {: print("declaracion_lista ::= id, id, ... : var_tipo;\n id, id, ... : var_tipo;\n ...;"); :};
+termino_log     ::= comparacion
+                  | OP_NOT termino_log  {: IntermediateCodeGenerator.invertCMP(); :}
+                  | ABRE_PAR condicion CIERRA_PAR
+                  ;
 
-var_lista ::= ID:id {: print("var_lista ::= id"); id_list.add(id.toString()); :};
-var_lista ::= var_lista COMA ID:id {: print("var_lista ::= id, id, ..."); id_list.add(id.toString()); :};
+comparacion     ::= expresion comparador:cmp expresion
+                  {:
+                        IntermediateCodeGenerator.insert("CMP", cmp);
+                        /*
+                            Guardamos la comparacion en caso que haya que invertirla.
+                        */
+                        IntermediateCodeGenerator.saveLastCMP();
+                  :}
+                  ;
 
-var_tipo ::= TD_INT:type {: print("var_tipo ::= TD_INT"); SymbolTableGenerator.addVariablesType(id_list, type.toString()); :}
-           | TD_FLOAT:type {: print("var_tipo ::= TD_FLOAT"); SymbolTableGenerator.addVariablesType(id_list, type.toString()); :} 
-           | TD_STRING:type {: print("var_tipo ::= TD_STRING"); SymbolTableGenerator.addVariablesType(id_list, type.toString()); :};
+comparador      ::= COMP_EQ        {: RESULT = "BNE"; :}
+                  | COMP_DIST      {: RESULT = "BEQ"; :}
+                  | COMP_MAYOR     {: RESULT = "BLE"; :}
+                  | COMP_MENOR     {: RESULT = "BGE"; :}
+                  | COMP_MAYOR_EQ  {: RESULT = "BLT"; :}
+                  | COMP_MENOR_EQ  {: RESULT = "BGT"; :}
+                  ;
 
-lista ::= ABRE_LISTA lista_rec CIERRA_LISTA {: print("lista ::= [factor, factor, ...]"); :};
-lista_rec ::= factor {: print("lista_rec ::= factor"); :};
-lista_rec ::= lista_rec COMA factor {: print("lista_rec ::= factor, factor, ..."); :};
+expresion       ::= expresion:expr OP_MAS termino:term
+                  {:
+                        if (expr != null && term != null) {
+                            if (expr.type == term.type) {
+                                IntermediateCodeGenerator.insert("+");
+                            }
+                            else {
+                                System.err.println(ErrorHandling.formatError(
+                                    "Semantic",
+                                    "No se puede sumar un \"" + expr.type.name() + "\" con un \"" + term.type.name() + "\".")
+                                );
+                                errorCount++;
+                            }
+                            RESULT = term;
+                        }
+                  :}
+                  | expresion:expr OP_MENOS termino:term
+                  {:
+                        if (expr != null && term != null) {
+                            if (expr.type == term.type) {
+                                IntermediateCodeGenerator.insert("-");
+                            }
+                            else {
+                                System.err.println(ErrorHandling.formatError(
+                                    "Semantic",
+                                    "No se puede restar un \"" + expr.type.name() + "\" con un \"" + term.type.name() + "\".")
+                                );
+                                errorCount++;
+                            }
+                            RESULT = term;
+                        }
+                  :}
+                  | termino:term  {: RESULT = term; :}
+                  ;
+
+termino         ::= termino:term OP_MULT factor:fact
+                  {:
+                        if (term != null && fact != null) {
+                            if (term.type == fact.type) {
+                                IntermediateCodeGenerator.insert("*");
+                            }
+                            else { 
+                                System.err.println(ErrorHandling.formatError(
+                                    "Semantic",
+                                    "No se puede multiplicar un \"" + term.type.name() + "\" con un \"" + fact.type.name() + "\".")
+                                );
+                                errorCount++;
+                            }
+                            RESULT = fact;
+                        }
+                  :}
+                  | termino:term OP_DIV factor:fact
+                  {:
+                        if (term != null && fact != null) {
+                            if (term.type == fact.type) {
+                                IntermediateCodeGenerator.insert("/");
+                            }
+                            else {
+                                System.err.println(ErrorHandling.formatError(
+                                    "Semantic",
+                                    "No se puede dividir un \"" + term.type.name() + "\" con un \"" + fact.type.name() + "\".")
+                                );
+                                errorCount++;
+                            }
+                            RESULT = fact;
+                        }
+                  :}
+                  | factor:fact  {: RESULT = fact; :}
+                  ;
+
+factor          ::= ID:id
+                  {:
+                        SymbolHashTableGenerator.Symbol sym = SymbolHashTableGenerator.getVariable(id.toString());
+                        if (sym != null) {
+                            IntermediateCodeGenerator.insert(sym.name);
+                            RESULT = sym;
+                        } else {
+                            System.err.println(ErrorHandling.formatError(
+                                "Semantic",
+                                "Variable \"" + id.toString() + "\" no fue previamente declarada.")
+                            );
+                            errorCount++;
+                        }
+                  :}
+                  | OP_MENOS ID:id
+                  {:
+                        SymbolHashTableGenerator.Symbol sym = SymbolHashTableGenerator.getVariable(id.toString());
+                        if (sym != null) {
+                            if (sym.type != SymbolHashTableGenerator.VariableTypes.STRING) {
+                                IntermediateCodeGenerator.insert('-' + sym.name);
+                            } else {
+                                System.err.println(ErrorHandling.formatError(
+                                    "Semantic",
+                                    "Variable \"" + sym.name + "\" no puede ser negativa porque es de tipo \"string\".")
+                                );
+                                errorCount++;
+                            }
+                            RESULT = sym;
+                        } else {
+                            System.err.println(ErrorHandling.formatError(
+                                "Semantic",
+                                "Variable \"" + id.toString() + "\" no fue previamente declarada.")
+                            );
+                            errorCount++;
+                        }
+                  :}
+                  | constant:cte
+                  {:
+                        /*
+                            No chequeamos si es null porque si llego hasta aca
+                            entonces ya esta dentro de la tabla de simbolos.
+                        */
+                        IntermediateCodeGenerator.insert(cte.name);
+                        RESULT = cte;
+                  :}
+                  | OP_MENOS constant:cte
+                  {:
+                        if (cte.type != SymbolHashTableGenerator.VariableTypes.STRING) {
+                            IntermediateCodeGenerator.insert('-' + cte.name);
+                        } else {
+                            System.err.println(ErrorHandling.formatError(
+                                "Semantic",
+                                "Constante \"" + cte.value + "\" no puede ser negativa porque es de tipo \"string\".")
+                            );
+                            errorCount++;
+                        }
+                        RESULT = cte;
+                  :}
+                  | ABRE_PAR expresion:expr CIERRA_PAR  {: RESULT = expr; :}
+                  ;
+
+constant        ::= CTE_INT:cte     {: RESULT = SymbolHashTableGenerator.getVariable(cte.toString()); :}
+                  | CTE_FLOAT:cte   {: RESULT = SymbolHashTableGenerator.getVariable(cte.toString()); :}
+                  | CTE_STRING:cte  {: RESULT = SymbolHashTableGenerator.getVariable(cte.toString()); :}
+                  ;
+
+interna_asig    ::= FUNC_INDICE interna_body
+                  {:
+                        if (Functions.indexValidate()) {
+                            Functions.findIndex();
+                        } else {
+                            System.err.println(ErrorHandling.formatError(
+                                "Semantic",
+                                "Mal uso de la funcion \"FirstIndexOf\".")
+                            );
+                            errorCount++;
+                        }
+                        RESULT = SymbolHashTableGenerator.VariableTypes.INT;
+                   :}
+                   | FUNC_CONCAT interna_body
+                   {:
+                        if (Functions.concatValidate()) {
+                            Functions.concatCut();
+                        } else {
+                            System.err.println(ErrorHandling.formatError(
+                                "Semantic",
+                                "Mal uso de la funcion \"ConcatenarConRecorte\".")
+                            );
+                            errorCount++;
+                        }
+                        RESULT = SymbolHashTableGenerator.VariableTypes.STRING;
+                   :}
+                   ;
+
+interna         ::= MOSTRAR_PANTALLA interna_body  {: Functions.write(); :}
+                  | LEER_TECLADO interna_body
+                  {:
+                        if (Functions.readValidate()) {
+                            Functions.read();
+                        } else {
+                            System.err.println(ErrorHandling.formatError(
+                                "Semantic",
+                                "Mal uso de la funcion \"read\".")
+                            );
+                            errorCount++;
+                        }
+                  :}
+                  ;
+
+interna_body    ::= ABRE_PAR argumentos CIERRA_PAR
+                  ;
+
+argumentos      ::= expresion:expr  {: if (expr != null) Arguments.add(expr); :}
+                  | argumentos COMA expresion:expr  {: if (expr != null) Arguments.add(expr); :}
+                  | argumentos COMA ABRE_LISTA args_lista CIERRA_LISTA
+                  ;
+
+args_lista      ::= expresion:expr  {: if (expr != null) Arguments.addList(expr); :}
+                  | args_lista COMA expresion:expr  {: if (expr != null) Arguments.addList(expr); :}
+                  ;
+
+asignable       ::= expresion:expr      {: RESULT = (expr != null)? expr.type : null; :}
+                  | interna_asig:iasig  {: RESULT = iasig; :}
+                  ;

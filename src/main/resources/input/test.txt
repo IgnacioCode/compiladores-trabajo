@@ -1,74 +1,83 @@
-#/ 
-    Creando
-    variables
-\#
-
+#/ Definicion de variables \#
 vars {
-    a, b : float;
-    i, MAX : int;
-    str1, str2 : string;
+    a, b, c : int;
+    str : string;
 };
 
+
+#/ Condicional if-else \#
+if (b > 0 and a == b) {
+    a = a * b + 1;
+} else {
+    a = 25;
+}
+
+
 #/ Asignaciones \#
-a = -3.;
-a = .1415;
-a = 3.14;
-b = a;
-MAX = 10;
+c = b + a;
 
-str1 = "@sdADa Sjfla%d  fg";
-str2 = read(str1);
 
-#/ Logica \#
-while (i < MAX) {
-    write("%d\n", i); #/ Funcion reservada \#
-
-    if (a - b > i) { #/ condicional if-else \#
-        c = d * (e-21) / 4;
-    }
-    else {
-        #/ loop dentro de un loop \#
-        vars { j : int; };
-        j = MAX * #/ comentario en medio \# 2;
-
-        while (j > MAX and j - i < MAX) {
-            if (not b != a) {
-                i = i + 1;
-                j = j - 1;
-            }
+#/ Iteraciones anidadas con condicionales \#
+while (a != 0 and b > 25) {
+    if (a < b or c > b) {
+        while (c != 0) {
+            a = c - b;
         }
+
+        c = 5 + 5;
     }
+    b = 2 * 3;
 }
 
-b = FirstIndexOf(a, [1,b,2,5,z,C]);
-str1 = ConcatenarConRecorte("Hola", "Mundo", 2);
 
-if (a or not b) {
-write ("se cumple a o no b");
+#/ Built-in funciones \#
+a = FirstIndexOf((b-1), [1,b,2,-5]);
+
+read(str);
+
+write("Esta string: ", str, " es distinta a este numero: ", a);
+
+str = ConcatenarConRecorte("Hola", "Mundo", 2);
+
+
+#/ Condicional if anidados \#
+if (b > 0 or a == b) {
+    if (not b < a) {
+        b = 1 + b;
+    }
+    a = a * b + 1;
 }
 
-if ((x>5) or (y<=10)) {
-write("hola");
-}
 
-if ((a or b) and (c and not d)) {
-write("se cumple la condicion");
-}
+#/ -- Errores Lexicos -- \#
+#/ String literal supera el tamaño maximo. \#
+// str2 = "RVg1ceT8I42ttpmcg1WmcBPFW4ZevF X2fGdRgKuQc2OulDrkoY2E3Xe8BiAV";
 
-if ((not a or not b) and not(c and not d)) {
-write("se cumple la condicion");
-}
+#/ Longitud del identificador supera el tamaño maximo. \#
+// p0jZaE1xBYfLzkNjfHoLV5StAkOzb9o2dWMEZ2qt3XxZ = 1;
 
-#/ Errores \#
-
-#/ Compilation error: String literal supera el tamaño maximo. \#
-//str2 = "RVg1ceT8I42ttpmcg1WmcBPFW4ZevF X2fGdRgKuQc2OulDrkoY2E3Xe8BiAV";
-
-#/ Compilation error: Longitud del identificador supera el tamaño maximo. \#
-//p0jZaE1xBYfLzkNjfHoLV5StAkOzb9o2dWMEZ2qt3XxZ = 1;
-
-#/ Compilation error: Supera el valor maximo de un numero int. \#
-//MAX = 123456879;
+#/ Supera el valor maximo de un numero int. \#
+// MAX = 123456879;
 
 #/ Compilation error: Supera el valor maximo de un numero float. \#
-//a = 12345.123456789;
+// a = 12345.123456789;
+
+#/ Caracter Desconocido \#
+// ?
+
+
+#/ -- Errores Semanticos -- \#
+#/ Variable previamente definida \#
+// vars { a : int; };
+
+#/ Variable no definida \#
+// k = 1 + 0;
+
+#/ Asignacion con distinto tipos \#
+// str = 1 + 0;
+
+#/ Operacion con tipos distintos \#
+// a = "Hola" / 3.0;
+
+#/ Mal uso de una funcion \#
+// a = FirstIndexOf("mundo", [1,b,2,-5]);

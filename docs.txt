@@ -1,0 +1,85 @@
+/ -- FirstIndexOf -- /
+x = FirstIndexOf(a, [1,b,2,-5,z,C])
+
+Polaca:
+    a
+    =
+    @arg
+.loop:
+    @i
+    @cant // Cantidad de elementos, se debe conseguir durante el analisis semantico.
+    BGE
+    [29] // Si salta es porque no lo encontro, entonces saltamos despues de la asignacion.
+    @arg
+    @elem[@i] // Es una array creada en el analisis semantico.
+    BEQ
+    [24] // Si salta es porque lo encontro, entonces saltamos directo a la asignacion.
+    @i
+    1
+    +
+    =
+    @i
+    BI
+    loop
+    @cant
+    @i
+    -
+    =
+    x
+
+> Durante el analisis semantico tambien se comprueba que el tipo y cantidad de argumentos sea valido.
+/ ------------------ /
+
+/ -- ConcatenarConRecorte -- /
+cadenaResultante = ConcatenarConRecorte("Hola", "Mundo", 2)
+
+Polaca:
+    _"Hola"
+    =
+    @arg1
+    _"Mundo"
+    =
+    @arg2
+    2
+    =
+    @arg3
+    strlen
+    @arg1
+    =
+    @size
+    @arg3
+    @size
+    CMP
+    BGT  // arg3 debe ser menor o igual que strlen
+    [77] // si falla guardamos el error
+    strlen
+    @arg2
+    =
+    @size
+    @arg3
+    @size
+    CMP
+    BGT  // arg3 debe ser menor o igual que strlen
+    [77] // si falla guardamos el error
+    strcut
+    @arg1
+    =
+    @arg1
+    strcut
+    @arg2
+    =
+    @arg2
+    strcat
+    @arg1
+    @arg2
+    BI
+    [81] // como no fallo saltamos el error
+    write
+    _"[Error] - La posicion de recorte no esta dentro del rango valido para ninguna de las dos cadenas." // @error_msg
+    BI
+    [83] // como fallo saltamos la asignacion
+    =
+    cadenaResultante
+
+> Durante el analisis semantico tambien se comprueba que el tipo y cantidad de argumentos sea valido.
+/ ------------------------- /

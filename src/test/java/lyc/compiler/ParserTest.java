@@ -3,7 +3,6 @@ package lyc.compiler;
 import java_cup.runtime.Symbol;
 import lyc.compiler.factories.ParserFactory;
 import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -77,12 +76,11 @@ public class ParserTest {
         compilationSuccessful(readFromFile("while.txt"));
     }
 
-
     private void compilationSuccessful(String input) throws Exception {
         assertThat(scan(input).sym).isEqualTo(ParserSym.EOF);
     }
 
-    private void compilationError(String input){
+    private void compilationError(String input) {
         assertThrows(Exception.class, () -> scan(input));
     }
 
