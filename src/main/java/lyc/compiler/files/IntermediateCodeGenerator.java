@@ -22,15 +22,15 @@ public class IntermediateCodeGenerator implements FileGenerator {
     // una negacion.
     private static Cell lastCMP = null;
 
-    private static class Cell {
-        int id;
-        String value;
+    public static class Cell {
+        public int id;
+        public String value;
 
-        Cell(int id) {
+        private Cell(int id) {
             this.id = id;
         }
 
-        Cell(int id, String value) {
+        private Cell(int id, String value) {
             this.id = id;
             this.value = value;
         }
@@ -56,6 +56,10 @@ public class IntermediateCodeGenerator implements FileGenerator {
             Cell cell = iter.next();
             fileWriter.write("[" + String.format("%03d", cell.id) + "]" + ": " + cell.value + "\n");
         }
+    }
+
+    public static Deque<Cell> get() {
+        return intermediateStack;
     }
 
     public static void insert(String... values) {
@@ -118,7 +122,7 @@ public class IntermediateCodeGenerator implements FileGenerator {
     }
 
     public static void move() {
-        Cell c = new Cell(intermediateStack.size());
+        Cell c = new Cell(intermediateStack.size() + 1);
         intermediateStack.addFirst(c);
     }
 
@@ -134,8 +138,8 @@ public class IntermediateCodeGenerator implements FileGenerator {
         stackCurrent();
     }
 
-    public static void unstack() {
-        intermediateStack.remove();
+    public static Cell unstack() {
+        return intermediateStack.remove();
     }
 
     public static void updateStacked(int offset) {

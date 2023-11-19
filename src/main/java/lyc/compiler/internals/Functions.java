@@ -1,6 +1,11 @@
 package lyc.compiler.internals;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import lyc.compiler.files.IntermediateCodeGenerator;
+import lyc.compiler.files.SymbolHashTableGenerator;
+import lyc.compiler.files.IntermediateCodeGenerator.Cell;
 import lyc.compiler.files.SymbolHashTableGenerator.Symbol;
 import lyc.compiler.files.SymbolHashTableGenerator.VariableTypes;
 
@@ -32,46 +37,52 @@ public class Functions extends Arguments {
     }
 
     public static void write() {
+        List<Cell> toWrite = new ArrayList<Cell>();
+
         for (Symbol sym : arguments) {
-            IntermediateCodeGenerator.insert("write", sym.name);
+            Cell cell = remove(sym);
+            toWrite.add(0, cell);
         }
+
+        for (Cell cell : toWrite) {
+            IntermediateCodeGenerator.insert("write", cell.value);
+        }
+
         IntermediateCodeGenerator.insert("newline");
         clear();
     }
 
     public static void read() {
-        IntermediateCodeGenerator.insert("read", arguments.get(0).name);
+        Cell cell = remove(arguments.get(0));
+        IntermediateCodeGenerator.insert("read", cell.value);
         clear();
     }
 
     public static void findIndex() {
-        // Inicializamos @idx en 1, cargamos la lista y ponemos la etiqueta de la
-        // funcion (con un numero para evitar pisar llamados previos).
-        IntermediateCodeGenerator.insert("_1", "=", "@idx", "offset", "@list",
-                ".FIND_IDX_" + IntermediateCodeGenerator.getCurrentID());
-        // La id del loop por la cual vamos a iterar hasta encontrar el indice.
-        String loop_id = String.valueOf(IntermediateCodeGenerator.getCurrentID());
+        // @idx: Contador.
+        SymbolHashTableGenerator.add(new Symbol("@idx", VariableTypes.INT));
+        String arg1 = arguments.get(0).name;
+
+        // Inicializamos @idx en 1, cargamos la lista.
+        IntermediateCodeGenerator.insert("_0", "=", "@idx");
         // Verificamos si no terminamos la array.
-        IntermediateCodeGenerator.insert("@idx", "@cant", "CMP", "BGE");
-        IntermediateCodeGenerator.moveAndStack();
-        // Comparamos el pivot con el elemento de la lista actual.
-        IntermediateCodeGenerator.insert(arguments.get(0).name, "[@list]", "CMP", "BEQ");
-        IntermediateCodeGenerator.moveAndStack();
+        for (Symbol sym : argumentsList) {
+            IntermediateCodeGenerator.insert("@idx", "_1", "+", "=", "@idx", arg1, sym.name, "CMP", "BEQ");
+            IntermediateCodeGenerator.moveAndStack();
+        }
+
         // Incrementamos el contador y marcamos el salto al loop
-        IntermediateCodeGenerator.insert("@idx", "_1", "+", "=", "@idx", "BI", loop_id);
-        // Marcamos el salto hasta el final del loop, si es que se encontro el elemento.
-        IntermediateCodeGenerator.updateStacked(1);
-        // Marcamos para guardar el indice, la asignacion se genera en la regla
-        // correspondiente.
+        String jump_id = String.valueOf(IntermediateCodeGenerator.getCurrentID() + 6);
+        IntermediateCodeGenerator.insert("BI", jump_id);
+
+        for (int i = 0; i < argumentsList.size(); i++) {
+            // Marcamos el salto hasta el final del loop, si es que se encontro el elemento.
+            IntermediateCodeGenerator.updateStacked(1);
+        }
+
         IntermediateCodeGenerator.insert("@idx");
-        // Si no se encontro saltamos 3 celdas para evitar la asignacion.
-        IntermediateCodeGenerator.updateStacked(3);
 
         clear(); // Limpiamos la lista de argumentos
-
-        // @list: Array con todos los elementos.
-        // @cant: Tamaño de la array.
-        // @idx: Contador.
     }
 
     public static void concatCut() {
@@ -84,24 +95,21 @@ public class Functions extends Arguments {
 
         // Calculamos el largo de arg1, lo guardamos en @size y comparamos con la
         // posicion de recorte.
-        IntermediateCodeGenerator.insert("strlen", arg1, "=", "@size", arg3, "@size", "CMP",
-                "BGT");
+        IntermediateCodeGenerator.insert(arg3, "strlen", arg1, "@size", "CMP", "BGT");
         IntermediateCodeGenerator.moveAndStack();
         // Calculamos el largo de arg2, lo guardamos en @size y comparamos con la
         // posicion de recorte.
-        IntermediateCodeGenerator.insert("strlen", arg2, "=", "@size", arg3, "@size", "CMP",
-                "BGT");
+        IntermediateCodeGenerator.insert(arg3, "strlen", arg2, "@size", "CMP", "BGT");
         IntermediateCodeGenerator.moveAndStack();
         // Cortamos arg1 y arg2 hasta la posicion de recorte, los volvemos a guardar y
         // concatenamos.
-        IntermediateCodeGenerator.insert("strcut", arg1, arg3, "=", arg1, "strcut", arg2, arg3, "=", arg2, "strcat",
-                arg1, arg2, "BI");
+        IntermediateCodeGenerator.insert("strcut", arg1, arg2, "@tmp_str", arg3, "BI");
         // Si la posicion no esta en un rango valido entonces saltamos al mensaje de
         // error.
         IntermediateCodeGenerator.updateStacked(2);
         IntermediateCodeGenerator.updateStacked(2);
         IntermediateCodeGenerator.moveAndStack();
-        IntermediateCodeGenerator.insert("write", "@error_msg", "BI");
+        IntermediateCodeGenerator.insert("write", "@error_msg", "newline", "BI");
         // y volvemos a saltar para evitar la asignacion, saltamos 4 celdas por: Celda
         // actual + 3 de asignacion.
         String jump_id = String.valueOf(IntermediateCodeGenerator.getCurrentID() + 4);
@@ -111,10 +119,14 @@ public class Functions extends Arguments {
 
         clear(); // Limpiamos la lista de argumentos
 
-        // @size: Variable en donde se guarda el tamaño de la cadena con strlen.
         // strlen str: Funcion que devuelve el tamaño de una cadena.
         // strcut str, offset: Corta una cadena hasta la posicion X.
         // strcat str, str: Concatena dos cadenas.
+
+        SymbolHashTableGenerator.add(new Symbol("@tmp_str", VariableTypes.STRING));
+        Symbol sym = new Symbol("@error_msg", VariableTypes.STRING,
+                "\"[Error] - Posicion de recorte fuera del rango valido para ambas cadenas.\"", 72);
+        SymbolHashTableGenerator.add(sym);
     }
 
 }

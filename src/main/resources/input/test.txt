@@ -1,44 +1,71 @@
-#/ Definicion de variables \#
+#/ Caso de Prueba \#
+
 vars {
     a, b, c : int;
-    str : string;
+    str1 : string;
 };
 
+#/ Asignaciones \#
+a = 1;
+b = 2;
+c = 3;
 
 #/ Condicional if-else \#
-if (b > 0 and a == b) {
-    a = a * b + 1;
+if (b > 0 or a == b) {
+    a = c * b + 1;
 } else {
     a = 25;
 }
 
-
-#/ Asignaciones \#
-c = b + a;
-
-
-#/ Iteraciones anidadas con condicionales \#
-while (a != 0 and b > 25) {
-    if (a < b or c > b) {
-        while (c != 0) {
-            a = c - b;
-        }
-
-        c = 5 + 5;
-    }
-    b = 2 * 3;
+vars { i : float; };
+write("Probando las iteraciones");
+i = 0.0;
+while (i < 5.0) {
+    write("Valor de i: ", i);
+    i = i + 1.0;
 }
 
+write(" ");
+
+write("Valores de las variables:");
+write("a = ", a);
+write("b = ", b);
+write("c = ", c);
+
+write(" ");
 
 #/ Built-in funciones \#
-a = FirstIndexOf((b-1), [1,b,2,-5]);
+write("Funcion a probar - Caso Exitoso:");
+write("a = FirstIndexOf((b+1), [4,1,c,2,-5])");
+a = FirstIndexOf((b+1), [4,1,c,2,-5]);
+write("Resultado de FirstIndexOf: ", a);
 
-read(str);
+write(" ");
 
-write("Esta string: ", str, " es distinta a este numero: ", a);
+write("Funcion a probar - Caso Erroneo:");
+write("b = FirstIndexOf(9, [4,1,c,2,-5])");
+b = FirstIndexOf(9, [4,1,c,2,-5]);
+write("Resultado de FirstIndexOf: ", b);
 
-str = ConcatenarConRecorte("Hola", "Mundo", 2);
+write(" ");
 
+write("Ingrese una cadena:");
+read(str1);
+write("Valor leido: ", str1);
+
+write(" ");
+
+write("Funcion a probar - Caso Exitoso:");
+write("ConcatenarConRecorte(Hola, Mundo, 2)");
+str1 = ConcatenarConRecorte("Hola", "Mundo", 2);
+write("Resultado de concatenar: ", str1);
+
+write(" ");
+
+write("Funcion a probar - Caso Erroneo:");
+write("ConcatenarConRecorte(Hola, Mundo, 47)");
+str1 = ConcatenarConRecorte("Hola", "Mundo", 47);
+write("Resultado de concatenar: ", str1);
 
 #/ Condicional if anidados \#
 if (b > 0 or a == b) {
@@ -48,6 +75,8 @@ if (b > 0 or a == b) {
     a = a * b + 1;
 }
 
+write(" ");
+write("Fin del programa.");
 
 #/ -- Errores Lexicos -- \#
 #/ String literal supera el tamaño maximo. \#
@@ -74,7 +103,7 @@ if (b > 0 or a == b) {
 // k = 1 + 0;
 
 #/ Asignacion con distinto tipos \#
-// str = 1 + 0;
+// str1 = 1 + 0;
 
 #/ Operacion con tipos distintos \#
 // a = "Hola" / 3.0;

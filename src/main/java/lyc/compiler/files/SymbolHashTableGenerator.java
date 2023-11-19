@@ -10,7 +10,7 @@ import lyc.compiler.model.VariablePreviouslyDefined;
 
 public class SymbolHashTableGenerator implements FileGenerator {
 
-	public static Hashtable<String, Symbol> symbolTable = new Hashtable<String, Symbol>();
+	public static Hashtable<String, Symbol> symbolTable = new Hashtable<String, Symbol>(64);
 
 	public static enum VariableTypes {
 		INT, FLOAT, STRING
@@ -27,13 +27,13 @@ public class SymbolHashTableGenerator implements FileGenerator {
 			this.type = type;
 		}
 
-		Symbol(String name, VariableTypes type, String value) {
+		public Symbol(String name, VariableTypes type, String value) {
 			this.name = name;
 			this.type = type;
 			this.value = value;
 		}
 
-		Symbol(String name, VariableTypes type, String value, int length) {
+		public Symbol(String name, VariableTypes type, String value, int length) {
 			this.name = name;
 			this.type = type;
 			this.value = value;
@@ -103,6 +103,10 @@ public class SymbolHashTableGenerator implements FileGenerator {
 		}
 	}
 
+	public static void add(Symbol sym) {
+		symbolTable.put(sym.name, sym);
+	}
+
 	public static void addVariable(String name, VariableTypes type) {
 		try {
 			_addVariable(name, type);
@@ -112,9 +116,10 @@ public class SymbolHashTableGenerator implements FileGenerator {
 	}
 
 	public static void addConstant(String value, VariableTypes type) {
-		Symbol sym = type.equals(VariableTypes.STRING) ? new Symbol("_" + value, type, value, value.length())
+		Symbol sym = type.equals(VariableTypes.STRING)
+				? new Symbol("_" + value.replaceAll("[^A-Za-z0-9]", ""), type, value, value.length() - 2)
 				: new Symbol('_' + value.replace('.', '_'), type, value);
-		symbolTable.put(value, sym);
+		symbolTable.put(sym.name, sym);
 	}
 
 	public static boolean variableExists(String name) {
@@ -123,6 +128,10 @@ public class SymbolHashTableGenerator implements FileGenerator {
 
 	public static Symbol getVariable(String name) {
 		return symbolTable.get(name);
+	}
+
+	public static void remove(String name) {
+		symbolTable.remove(name);
 	}
 
 	public static VariableTypes castType(String type) throws InvalidTypeException {
