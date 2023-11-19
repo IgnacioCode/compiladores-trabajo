@@ -2,7 +2,6 @@ package lyc.compiler;
 
 import java_cup.runtime.*;
 import java.util.ArrayList;
-import lyc.compiler.model.*;
 import lyc.compiler.files.SymbolHashTableGenerator;
 import lyc.compiler.files.IntermediateCodeGenerator;
 import lyc.compiler.internals.Arguments;
@@ -13,9 +12,8 @@ class Parser;
 
 parser code {:
     public int errorCount = 0;
-    public boolean syntaxErrors;
     // Lista con las variables a guardar en la tabla de simbolos.
-    public ArrayList<String> id_list = new ArrayList();
+    public ArrayList<String> id_list = new ArrayList<String>();
 
     public void syntax_error(Symbol current_token) {
         report_error(
@@ -75,7 +73,7 @@ terminal FUNC_CONCAT;
 
 
 // -- No Terminales -- //
-non terminal asm;
+non terminal inicio;
 non terminal programa;
 non terminal sentencia;
 non terminal asignacion;
@@ -106,11 +104,11 @@ non terminal SymbolHashTableGenerator.VariableTypes asignable;
 
 
 // -- Start Symbol -- //
-start with asm;
+start with inicio;
 
 
 // -- Reglas -- //
-asm             ::= programa    {: RESULT = errorCount; :}
+inicio          ::= programa    {: RESULT = errorCount; :}
                   ;
 
 programa        ::= sentencia
@@ -199,7 +197,7 @@ condicion       ::= condicion OP_OR  {: IntermediateCodeGenerator.invertCMP(); :
                   | conjuncion
                   {:
                         /*
-                            Apila la celda de la siguiente comparacion por and (si es que hay) 
+                            Apila la celda de la siguiente comparacion por and (si es que hay)
                             o una sola comparacion.
                         */
                         IntermediateCodeGenerator.moveAndStack();
@@ -365,9 +363,9 @@ factor          ::= ID:id
                   | ABRE_PAR expresion:expr CIERRA_PAR  {: RESULT = expr; :}
                   ;
 
-constant        ::= CTE_INT:cte     {: RESULT = SymbolHashTableGenerator.getVariable(cte.toString()); :}
-                  | CTE_FLOAT:cte   {: RESULT = SymbolHashTableGenerator.getVariable(cte.toString()); :}
-                  | CTE_STRING:cte  {: RESULT = SymbolHashTableGenerator.getVariable(cte.toString()); :}
+constant        ::= CTE_INT:cte     {: RESULT = SymbolHashTableGenerator.getVariable("_" + cte.toString()); :}
+                  | CTE_FLOAT:cte   {: RESULT = SymbolHashTableGenerator.getVariable("_" + cte.toString().replace('.', '_')); :}
+                  | CTE_STRING:cte  {: RESULT = SymbolHashTableGenerator.getVariable("_" + cte.toString().replaceAll("[^A-Za-z0-9]", "")); :}
                   ;
 
 interna_asig    ::= FUNC_INDICE interna_body

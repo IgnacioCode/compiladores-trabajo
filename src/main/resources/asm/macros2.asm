@@ -158,8 +158,50 @@ beep                    macro                    ;beeps speaker
                         popa
 
 endm
-  
-  
- 
-  
-  
+
+
+STRLEN MACRO
+LOCAL @@STRL01, @@STREND
+	;DEJA EN BX LA CANTIDAD DE CARACTERES DE UNA CADENA
+	MOV BX, 0
+@@STRL01:
+	CMP BYTE PTR[SI + BX], '$'
+	JE @@STREND
+	INC BX
+	JMP @@STRL01
+@@STREND:
+	NOP
+ENDM
+
+
+STRCPY MACRO offset
+LOCAL @@OK
+	STRLEN
+	CMP BX, 31
+	JLE @@OK
+	MOV BX, 31
+@@OK:
+  ADD SI, offset
+  ADD DI, CX
+	MOV CX, BX
+	CLD
+	REP MOVSB
+	MOV AL, '$'
+	MOV BYTE PTR[DI], AL
+ENDM
+
+
+STRCUT MACRO str_01, str_02, str_rc, pos
+	mov SI, offset str_01
+	mov DI, offset str_rc
+  mov CX, 0
+	STRCPY WORD PTR pos
+
+	mov SI, offset str_rc
+	STRLEN
+	mov CX, BX
+
+	mov SI, offset str_02
+	mov DI, offset str_rc
+	STRCPY WORD PTR pos
+ENDM

@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import lyc.compiler.files.IntermediateCodeGenerator;
+import lyc.compiler.files.SymbolHashTableGenerator;
+import lyc.compiler.files.IntermediateCodeGenerator.Cell;
 import lyc.compiler.files.SymbolHashTableGenerator.Symbol;
 
 public class Arguments {
@@ -16,6 +18,15 @@ public class Arguments {
         Symbol sym = new Symbol("@args" + totalArgs++, arg.type);
         IntermediateCodeGenerator.insert("=", sym.name);
         arguments.add(sym);
+        SymbolHashTableGenerator.addVariable(sym.name, arg.type);
+    }
+
+    public static Cell remove(Symbol arg) {
+        totalArgs--;
+        SymbolHashTableGenerator.remove(arg.name);
+        IntermediateCodeGenerator.unstack(); // @argX
+        IntermediateCodeGenerator.unstack(); // =
+        return IntermediateCodeGenerator.unstack(); // id
     }
 
     public static void addList(Symbol arg) {
@@ -32,6 +43,16 @@ public class Arguments {
         if (!argumentsList.isEmpty()) {
             argumentsList = new ArrayList<Symbol>();
         }
+    }
+
+    protected static String listToString() {
+        StringBuilder str = new StringBuilder();
+
+        for (Symbol sym : argumentsList) {
+            str.append(sym.name + ",");
+        }
+        str.setLength(str.length() - 1);
+        return str.toString();
     }
 
 }
